@@ -1,4 +1,4 @@
-Xadmin |Build Status|
+Xadmin
 ============================================
 Drop-in replacement of Django admin comes with lots of goodies, fully extensible with plugin support, pretty UI based on Twitter Bootstrap.
 
@@ -93,6 +93,10 @@ Documentation
 
 Changelogs
 -------------
+1.6.0
+^^^^^
+- 增加python3支持，同时兼容python3.
+- 因为fork原有版本为了后续修改特意增加大版本号。
 
 0.6.0
 ^^^^^
