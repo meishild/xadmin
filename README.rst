@@ -1,10 +1,8 @@
 Xadmin |Build Status|
 ============================================
-
-.. |Build Status| image:: https://travis-ci.org/sshwsfc/xadmin.png?branch=master
-   :target: https://travis-ci.org/sshwsfc/xadmin
-
 Drop-in replacement of Django admin comes with lots of goodies, fully extensible with plugin support, pretty UI based on Twitter Bootstrap.
+
+增加兼容性处理支持python3，不过未进行充分测试。
 
 Live Demo
 ---------
