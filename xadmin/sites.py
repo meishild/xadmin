@@ -6,8 +6,9 @@ from django.db.models.base import ModelBase
 from django.views.decorators.cache import never_cache
 import inspect
 
-reload(sys)
-sys.setdefaultencoding("utf-8")
+if sys.version < '3':
+    reload(sys)
+    sys.setdefaultencoding("utf-8")
 
 
 class AlreadyRegistered(Exception):
@@ -24,7 +25,6 @@ class MergeAdminMetaclass(type):
 
 
 class AdminSite(object):
-
     def __init__(self, name='xadmin'):
         self.name = name
         self.app_name = 'xadmin'
@@ -33,14 +33,14 @@ class AdminSite(object):
         self._registry_avs = {}  # admin_view_class class -> admin_class class
         self._registry_settings = {}  # settings name -> admin_class class
         self._registry_views = []
-            # url instance contains (path, admin_view class, name)
+        # url instance contains (path, admin_view class, name)
         self._registry_modelviews = []
-            # url instance contains (path, admin_view class, name)
+        # url instance contains (path, admin_view class, name)
         self._registry_plugins = {}  # view_class class -> plugin_class class
 
         self._admin_view_cache = {}
 
-        #self.check_dependencies()
+        # self.check_dependencies()
 
         self.model_admins_order = 0
 
@@ -69,7 +69,7 @@ class AdminSite(object):
             self._registry_modelviews.append((path, admin_view_class, name))
         else:
             raise ImproperlyConfigured(u'The registered view class %s isn\'t subclass of %s' %
-                                      (admin_view_class.__name__, BaseAdminView.__name__))
+                                       (admin_view_class.__name__, BaseAdminView.__name__))
 
     def register_view(self, path, admin_view_class, name):
         self._registry_views.append((path, admin_view_class, name))
@@ -81,7 +81,7 @@ class AdminSite(object):
                 admin_view_class, []).append(plugin_class)
         else:
             raise ImproperlyConfigured(u'The registered plugin class %s isn\'t subclass of %s' %
-                                      (plugin_class.__name__, BaseAdminPlugin.__name__))
+                                       (plugin_class.__name__, BaseAdminPlugin.__name__))
 
     def register_settings(self, name, admin_class):
         self._registry_settings[name.lower()] = admin_class
@@ -108,7 +108,8 @@ class AdminSite(object):
                     # which causes issues later on.
                     options['__module__'] = __name__
 
-                admin_class = type(str("%s%sAdmin" % (model._meta.app_label, model._meta.model_name)), (admin_class,), options or {})
+                admin_class = type(str("%s%sAdmin" % (model._meta.app_label, model._meta.model_name)), (admin_class,),
+                                   options or {})
                 admin_class.model = model
                 admin_class.order = self.model_admins_order
                 self.model_admins_order += 1
@@ -167,9 +168,10 @@ class AdminSite(object):
             raise ImproperlyConfigured("Put 'django.contrib.contenttypes' in "
                                        "your INSTALLED_APPS setting in order to use the admin application.")
         if not ('django.contrib.auth.context_processors.auth' in settings.TEMPLATE_CONTEXT_PROCESSORS or
-                'django.core.context_processors.auth' in settings.TEMPLATE_CONTEXT_PROCESSORS):
+                        'django.core.context_processors.auth' in settings.TEMPLATE_CONTEXT_PROCESSORS):
             raise ImproperlyConfigured("Put 'django.contrib.auth.context_processors.auth' "
-                                       "in your TEMPLATE_CONTEXT_PROCESSORS setting in order to use the admin application.")
+                                       "in your TEMPLATE_CONTEXT_PROCESSORS setting in order to use the admin "
+                                       "application.")
 
     def admin_view(self, view, cacheable=False):
         """
@@ -194,17 +196,19 @@ class AdminSite(object):
         ``never_cache`` decorator. If the view can be safely cached, set
         cacheable=True.
         """
+
         def inner(request, *args, **kwargs):
             if not self.has_permission(request) and getattr(view, 'need_site_permission', True):
                 return self.create_admin_view(self.login_view)(request, *args, **kwargs)
             return view(request, *args, **kwargs)
+
         if not cacheable:
             inner = never_cache(inner)
         return update_wrapper(inner, view)
 
     def _get_merge_attrs(self, option_class, plugin_class):
         return dict([(name, getattr(option_class, name)) for name in dir(option_class)
-                    if name[0] != '_' and not callable(getattr(option_class, name)) and hasattr(plugin_class, name)])
+                     if name[0] != '_' and not callable(getattr(option_class, name)) and hasattr(plugin_class, name)])
 
     def _get_settings_class(self, admin_view_class):
         name = admin_view_class.__name__.lower()
@@ -225,7 +229,8 @@ class AdminSite(object):
                 bases = [plugin_class]
                 for oc in option_classes:
                     attrs.update(self._get_merge_attrs(oc, plugin_class))
-                    meta_class = getattr(oc, plugin_class.__name__, getattr(oc, plugin_class.__name__.replace('Plugin', ''), None))
+                    meta_class = getattr(oc, plugin_class.__name__,
+                                         getattr(oc, plugin_class.__name__.replace('Plugin', ''), None))
                     if meta_class:
                         bases.insert(0, meta_class)
                 if attrs:
@@ -233,6 +238,7 @@ class AdminSite(object):
                         '%s%s' % (''.join([oc.__name__ for oc in option_classes]), plugin_class.__name__),
                         tuple(bases), attrs)
             return plugin_class
+
         return merge_class
 
     def get_plugins(self, admin_view_class, *option_classes):
@@ -290,31 +296,39 @@ class AdminSite(object):
         def wrap(view, cacheable=False):
             def wrapper(*args, **kwargs):
                 return self.admin_view(view, cacheable)(*args, **kwargs)
+
             return update_wrapper(wrapper, view)
 
         # Admin-site-wide views.
         urlpatterns = [
-                url(r'^jsi18n/$', wrap(self.i18n_javascript, cacheable=True), name='jsi18n')
-            ]
+            url(r'^jsi18n/$', wrap(self.i18n_javascript, cacheable=True), name='jsi18n')
+        ]
 
         # Registed admin views
         # inspect[isclass]: Only checks if the object is a class. With it lets you create an custom view that
         # inherits from multiple views and have more of a metaclass.
         urlpatterns += [
-                url(path, wrap(self.create_admin_view(clz_or_func)) if inspect.isclass(clz_or_func) and issubclass(clz_or_func, BaseAdminView) else include(clz_or_func(self)),
+            url(path,
+                wrap(self.create_admin_view(clz_or_func)) if inspect.isclass(clz_or_func) and issubclass(clz_or_func,
+                                                                                                         BaseAdminView) else include(
+                    clz_or_func(self)),
                 name=name) for path, clz_or_func, name in self._registry_views
             ]
 
         # Add in each model's views.
-        for model, admin_class in self._registry.iteritems():
+        if sys.version < '3':
+            items = self._registry.iteritems()
+        else:
+            items = list(self._registry.items())
+        for model, admin_class in items:
             view_urls = [url(
                 path, wrap(
                     self.create_model_admin_view(clz, model, admin_class)),
                 name=name % (model._meta.app_label, model._meta.model_name))
-                for path, clz, name in self._registry_modelviews]
+                         for path, clz, name in self._registry_modelviews]
             urlpatterns += [
-                    url(r'^%s/%s/' % ( model._meta.app_label, model._meta.model_name), include(view_urls))
-                ]
+                url(r'^%s/%s/' % (model._meta.app_label, model._meta.model_name), include(view_urls))
+            ]
 
         return urlpatterns
 
@@ -334,6 +348,7 @@ class AdminSite(object):
         else:
             from django.views.i18n import null_javascript_catalog as javascript_catalog
         return javascript_catalog(request, packages=['django.conf', 'xadmin'])
+
 
 # This global object represents the default admin site, for the common case.
 # You can instantiate AdminSite in your own code to create a custom admin site.

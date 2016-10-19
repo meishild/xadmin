@@ -1,5 +1,7 @@
 import copy
+import sys
 
+from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
@@ -7,16 +9,16 @@ from django.db import models, transaction
 from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponseRedirect
 from django.template.response import TemplateResponse
-from django.utils.encoding import force_unicode
+
 from django.utils.html import escape
 from django.template import loader
 from django.utils.translation import ugettext as _
 from xadmin import widgets
-from xadmin.layout import FormHelper, Layout, Fieldset, TabHolder, Container, Column, Col, Field
-from xadmin.util import unquote
+from xadmin.layout import Layout, Fieldset, TabHolder, Container, Column, Col, Field
+from xadmin.util import unquote, is_string
 from xadmin.views.detail import DetailAdminUtil
 
-from base import CommAdminView, filter_hook, csrf_protect_m
+from .base import CommAdminView, filter_hook, csrf_protect_m
 
 class FormAdminView(CommAdminView):
     form = forms.ModelForm
@@ -110,7 +112,7 @@ class FormAdminView(CommAdminView):
         if self.valid_forms():
             self.save_forms()
             response = self.post_response()
-            if isinstance(response, basestring):
+            if is_string(response):
                 return HttpResponseRedirect(response)
             else:
                 return response

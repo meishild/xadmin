@@ -1,4 +1,3 @@
-
 from django.template import loader
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -10,6 +9,7 @@ from django.db.models import Q
 from django.forms import ModelChoiceField
 from django.http import QueryDict
 
+from xadmin.util import to_unicode
 from xadmin.plugins.utils import get_context_dict
 from xadmin.sites import site
 from xadmin.views import ModelAdminView, BaseAdminPlugin, ListAdminView
@@ -188,7 +188,7 @@ class BookmarkWidget(PartialBaseWidget):
         self.bookmark = bookmark
 
         if not self.title:
-            self.title = unicode(bookmark)
+            self.title = to_unicode(bookmark)
 
         req = self.make_get_request("", data.items())
         self.list_view = self.get_view_class(

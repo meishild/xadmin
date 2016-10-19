@@ -11,7 +11,6 @@ from xadmin.util import vendor
 
 
 class ForeignKeySearchWidget(forms.Widget):
-
     def __init__(self, rel, admin_view, attrs=None, using=None):
         self.rel = rel
         self.admin_view = admin_view
@@ -39,7 +38,8 @@ class ForeignKeySearchWidget(forms.Widget):
         final_attrs = self.build_attrs(attrs, name=name)
         output = [format_html('<select{0}>', flatatt(final_attrs))]
         if value:
-            output.append(format_html('<option selected="selected" value="{0}">{1}</option>', value, self.label_for_value(value)))
+            output.append(
+                format_html('<option selected="selected" value="{0}">{1}</option>', value, self.label_for_value(value)))
         output.append('</select>')
         return mark_safe('\n'.join(output))
 
@@ -56,8 +56,8 @@ class ForeignKeySearchWidget(forms.Widget):
     def media(self):
         return vendor('select.js', 'select.css', 'xadmin.widget.select.js')
 
-class ForeignKeySelectWidget(ForeignKeySearchWidget):
 
+class ForeignKeySelectWidget(ForeignKeySearchWidget):
     def build_attrs(self, attrs={}, **kwargs):
         attrs = super(ForeignKeySelectWidget, self).build_attrs(attrs, **kwargs)
         if "class" not in attrs:
@@ -67,8 +67,8 @@ class ForeignKeySelectWidget(ForeignKeySearchWidget):
         attrs['data-placeholder'] = _('Select %s') % self.rel.to._meta.verbose_name
         return attrs
 
-class RelateFieldPlugin(BaseAdminPlugin):
 
+class RelateFieldPlugin(BaseAdminPlugin):
     def get_field_style(self, attrs, db_field, style, **kwargs):
         # search able fk field
         if style in ('fk-ajax', 'fk-select') and isinstance(db_field, models.ForeignKey):
@@ -76,7 +76,9 @@ class RelateFieldPlugin(BaseAdminPlugin):
                     self.has_model_perm(db_field.remote_field.to, 'view'):
                 db = kwargs.get('using')
                 return dict(attrs or {}, \
-                    widget=(style == 'fk-ajax' and ForeignKeySearchWidget or ForeignKeySelectWidget)(db_field.remote_field, self.admin_view, using=db))
+                            widget=(style == 'fk-ajax' and ForeignKeySearchWidget or ForeignKeySelectWidget)(
+                                db_field.remote_field, self.admin_view, using=db))
         return attrs
+
 
 site.register_plugin(RelateFieldPlugin, ModelFormAdminView)

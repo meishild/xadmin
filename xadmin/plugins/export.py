@@ -1,36 +1,39 @@
-import StringIO
 import datetime
 import sys
 
 from django.http import HttpResponse
 from django.template import loader
-from django.utils.encoding import force_unicode, smart_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 from django.utils.xmlutils import SimplerXMLGenerator
 from django.db.models import BooleanField, NullBooleanField
-
 from xadmin.plugins.utils import get_context_dict
 from xadmin.sites import site
 from xadmin.views import BaseAdminPlugin, ListAdminView
-from xadmin.util import json
+from xadmin.util import json, to_force_unicode, is_string, to_smart_unicode
 from xadmin.views.list import ALL_VAR
 
 try:
     import xlwt
+
     has_xlwt = True
 except:
     has_xlwt = False
 
 try:
     import xlsxwriter
+
     has_xlsxwriter = True
 except:
     has_xlsxwriter = False
 
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 
 class ExportMenuPlugin(BaseAdminPlugin):
-
     list_export = ('xlsx', 'xls', 'csv', 'xml', 'json')
     export_names = {'xlsx': 'Excel 2007', 'xls': 'Excel', 'csv': 'CSV',
                     'xml': 'XML', 'json': 'JSON'}
@@ -43,7 +46,8 @@ class ExportMenuPlugin(BaseAdminPlugin):
     def block_top_toolbar(self, context, nodes):
         if self.list_export:
             context.update({
-                'show_export_all': self.admin_view.paginator.count > self.admin_view.list_per_page and not ALL_VAR in self.admin_view.request.GET,
+                'show_export_all': self.admin_view.paginator.count > self.admin_view.list_per_page and not ALL_VAR in
+                                                                                                           self.admin_view.request.GET,
                 'form_params': self.admin_view.get_form_params({'_do_': 'export'}, ('export_type',)),
                 'export_types': [{'type': et, 'name': self.export_names[et]} for et in self.list_export],
             })
@@ -52,7 +56,6 @@ class ExportMenuPlugin(BaseAdminPlugin):
 
 
 class ExportPlugin(BaseAdminPlugin):
-
     export_mimes = {'xlsx': 'application/vnd.ms-excel',
                     'xls': 'application/vnd.ms-excel', 'csv': 'text/csv',
                     'xml': 'application/xhtml+xml', 'json': 'application/json'}
@@ -62,8 +65,8 @@ class ExportPlugin(BaseAdminPlugin):
 
     def _format_value(self, o):
         if (o.field is None and getattr(o.attr, 'boolean', False)) or \
-           (o.field and isinstance(o.field, (BooleanField, NullBooleanField))):
-                value = o.value
+                (o.field and isinstance(o.field, (BooleanField, NullBooleanField))):
+            value = o.value
         elif str(o.text).startswith("<span class='text-muted'>"):
             value = escape(str(o.text)[25:-7])
         else:
@@ -75,15 +78,15 @@ class ExportPlugin(BaseAdminPlugin):
         rows = context['results']
 
         return [dict([
-            (force_unicode(headers[i].text), self._format_value(o)) for i, o in
-            enumerate(filter(lambda c:getattr(c, 'export', False), r.cells))]) for r in rows]
+                         (to_force_unicode(headers[i].text), self._format_value(o)) for i, o in
+                         enumerate(filter(lambda c: getattr(c, 'export', False), r.cells))]) for r in rows]
 
     def _get_datas(self, context):
         rows = context['results']
 
         new_rows = [[self._format_value(o) for o in
-            filter(lambda c:getattr(c, 'export', False), r.cells)] for r in rows]
-        new_rows.insert(0, [force_unicode(c.text) for c in context['result_headers'].cells if c.export])
+                     filter(lambda c: getattr(c, 'export', False), r.cells)] for r in rows]
+        new_rows.insert(0, [to_force_unicode(c.text) for c in context['result_headers'].cells if c.export])
         return new_rows
 
     def get_xlsx_export(self, context):
@@ -95,11 +98,12 @@ class ExportPlugin(BaseAdminPlugin):
         model_name = self.opts.verbose_name
         book = xlsxwriter.Workbook(output)
         sheet = book.add_worksheet(
-            u"%s %s" % (_(u'Sheet'), force_unicode(model_name)))
+            u"%s %s" % (_(u'Sheet'), to_force_unicode(model_name)))
         styles = {'datetime': book.add_format({'num_format': 'yyyy-mm-dd hh:mm:ss'}),
                   'date': book.add_format({'num_format': 'yyyy-mm-dd'}),
                   'time': book.add_format({'num_format': 'hh:mm:ss'}),
-                  'header': book.add_format({'font': 'name Times New Roman', 'color': 'red', 'bold': 'on', 'num_format': '#,##0.00'}),
+                  'header': book.add_format(
+                      {'font': 'name Times New Roman', 'color': 'red', 'bold': 'on', 'num_format': '#,##0.00'}),
                   'default': book.add_format()}
 
         if not export_header:
@@ -132,11 +136,12 @@ class ExportPlugin(BaseAdminPlugin):
         model_name = self.opts.verbose_name
         book = xlwt.Workbook(encoding='utf8')
         sheet = book.add_sheet(
-            u"%s %s" % (_(u'Sheet'), force_unicode(model_name)))
+            u"%s %s" % (_(u'Sheet'), to_force_unicode(model_name)))
         styles = {'datetime': xlwt.easyxf(num_format_str='yyyy-mm-dd hh:mm:ss'),
                   'date': xlwt.easyxf(num_format_str='yyyy-mm-dd'),
                   'time': xlwt.easyxf(num_format_str='hh:mm:ss'),
-                  'header': xlwt.easyxf('font: name Times New Roman, color-index red, bold on', num_format_str='#,##0.00'),
+                  'header': xlwt.easyxf('font: name Times New Roman, color-index red, bold on',
+                                        num_format_str='#,##0.00'),
                   'default': xlwt.Style.default_style}
 
         if not export_header:
@@ -164,7 +169,7 @@ class ExportPlugin(BaseAdminPlugin):
         if isinstance(t, bool):
             return _('Yes') if t else _('No')
         t = t.replace('"', '""').replace(',', '\,')
-        if isinstance(t, basestring):
+        if is_string(t):
             t = '"%s"' % t
         return t
 
@@ -193,7 +198,7 @@ class ExportPlugin(BaseAdminPlugin):
                 self._to_xml(xml, value)
                 xml.endElement(key)
         else:
-            xml.characters(smart_unicode(data))
+            xml.characters(to_smart_unicode(data))
 
     def get_xml_export(self, context):
         results = self._get_objects(context)

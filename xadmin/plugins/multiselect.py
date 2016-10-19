@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 from itertools import chain
 
 import xadmin
@@ -6,15 +6,13 @@ from django import forms
 from django.db.models import ManyToManyField
 from django.forms.utils import flatatt
 from django.template import loader
-from django.utils.encoding import force_unicode
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
-from xadmin.util import vendor
+from xadmin.util import vendor, to_force_unicode
 from xadmin.views import BaseAdminPlugin, ModelFormAdminView
 
 
 class SelectMultipleTransfer(forms.SelectMultiple):
-
     @property
     def media(self):
         return vendor('xadmin.widget.select-transfer.js', 'xadmin.widget.select-transfer.css')
@@ -25,9 +23,10 @@ class SelectMultipleTransfer(forms.SelectMultiple):
         super(SelectMultipleTransfer, self).__init__(attrs, choices)
 
     def render_opt(self, selected_choices, option_value, option_label):
-        option_value = force_unicode(option_value)
+        option_value = to_force_unicode(option_value)
         return u'<option value="%s">%s</option>' % (
-            escape(option_value), conditional_escape(force_unicode(option_label))), bool(option_value in selected_choices)
+            escape(option_value), conditional_escape(to_force_unicode(option_label))), bool(
+            option_value in selected_choices)
 
     def render(self, name, value, attrs=None, choices=()):
         if attrs is None:
@@ -39,14 +38,14 @@ class SelectMultipleTransfer(forms.SelectMultiple):
             value = []
         final_attrs = self.build_attrs(attrs, name=name)
 
-        selected_choices = set(force_unicode(v) for v in value)
+        selected_choices = set(to_force_unicode(v) for v in value)
         available_output = []
         chosen_output = []
 
         for option_value, option_label in chain(self.choices, choices):
             if isinstance(option_label, (list, tuple)):
                 available_output.append(u'<optgroup label="%s">' %
-                                        escape(force_unicode(option_value)))
+                                        escape(to_force_unicode(option_value)))
                 for option in option_label:
                     output, selected = self.render_opt(
                         selected_choices, *option)
@@ -75,7 +74,6 @@ class SelectMultipleTransfer(forms.SelectMultiple):
 
 
 class SelectMultipleDropdown(forms.SelectMultiple):
-
     @property
     def media(self):
         return vendor('multiselect.js', 'multiselect.css', 'xadmin.widget.multiselect.js')
@@ -88,13 +86,12 @@ class SelectMultipleDropdown(forms.SelectMultiple):
 
 
 class M2MSelectPlugin(BaseAdminPlugin):
-
     def init_request(self, *args, **kwargs):
         return hasattr(self.admin_view, 'style_fields') and \
-            (
-                'm2m_transfer' in self.admin_view.style_fields.values() or
-                'm2m_dropdown' in self.admin_view.style_fields.values()
-            )
+               (
+                   'm2m_transfer' in self.admin_view.style_fields.values() or
+                   'm2m_dropdown' in self.admin_view.style_fields.values()
+               )
 
     def get_field_style(self, attrs, db_field, style, **kwargs):
         if style == 'm2m_transfer' and isinstance(db_field, ManyToManyField):

@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 from xadmin.sites import site
 from xadmin.models import UserSettings
 from xadmin.views import BaseAdminPlugin, ModelFormAdminView, DetailAdminView
@@ -6,7 +6,6 @@ from xadmin.layout import Fieldset, Column
 
 
 class BasePortalPlugin(BaseAdminPlugin):
-
     # Media
     def get_media(self, media):
         return media + self.vendor('xadmin.plugin.portal.js')
@@ -21,7 +20,6 @@ def get_layout_objects(layout, clz, objects):
 
 
 class ModelFormPlugin(BasePortalPlugin):
-
     def _portal_key(self):
         return '%s_%s_editform_portal' % (self.opts.app_label, self.opts.model_name)
 
@@ -62,13 +60,13 @@ class ModelFormPlugin(BasePortalPlugin):
 
 
 class ModelDetailPlugin(ModelFormPlugin):
-
     def _portal_key(self):
         return '%s_%s_detail_portal' % (self.opts.app_label, self.opts.model_name)
 
     def block_after_fieldsets(self, context, node):
         # put portal key and submit url to page
         return "<input type='hidden' id='_portal_key' value='%s' />" % self._portal_key()
+
 
 site.register_plugin(ModelFormPlugin, ModelFormAdminView)
 site.register_plugin(ModelDetailPlugin, DetailAdminView)

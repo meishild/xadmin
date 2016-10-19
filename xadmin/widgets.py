@@ -4,16 +4,15 @@ Form Widget classes specific to the Django admin site.
 from itertools import chain
 from django import forms
 from django.forms.widgets import RadioFieldRenderer, RadioChoiceInput
-from django.utils.encoding import force_unicode
+
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape
 from django.utils.translation import ugettext as _
 
-from util import vendor
+from .util import vendor, to_force_unicode
 
 
 class AdminDateWidget(forms.DateInput):
-
     @property
     def media(self):
         return vendor('datepicker.js', 'datepicker.css', 'xadmin.widget.datetime.js')
@@ -26,12 +25,14 @@ class AdminDateWidget(forms.DateInput):
 
     def render(self, name, value, attrs=None):
         input_html = super(AdminDateWidget, self).render(name, value, attrs)
-        return mark_safe('<div class="input-group date bootstrap-datepicker"><span class="input-group-addon"><i class="fa fa-calendar"></i></span>%s'
-                         '<span class="input-group-btn"><button class="btn btn-default" type="button">%s</button></span></div>' % (input_html, _(u'Today')))
+        return mark_safe(
+            '<div class="input-group date bootstrap-datepicker"><span class="input-group-addon"><i class="fa '
+            'fa-calendar"></i></span>%s'
+            '<span class="input-group-btn"><button class="btn btn-default" type="button">%s</button></span></div>' % (
+            input_html, _(u'Today')))
 
 
 class AdminTimeWidget(forms.TimeInput):
-
     @property
     def media(self):
         return vendor('datepicker.js', 'clockpicker.js', 'clockpicker.css', 'xadmin.widget.datetime.js')
@@ -44,12 +45,15 @@ class AdminTimeWidget(forms.TimeInput):
 
     def render(self, name, value, attrs=None):
         input_html = super(AdminTimeWidget, self).render(name, value, attrs)
-        return mark_safe('<div class="input-group time bootstrap-clockpicker"><span class="input-group-addon"><i class="fa fa-clock-o">'
-                         '</i></span>%s<span class="input-group-btn"><button class="btn btn-default" type="button">%s</button></span></div>' % (input_html, _(u'Now')))
+        return mark_safe(
+            '<div class="input-group time bootstrap-clockpicker"><span class="input-group-addon"><i class="fa '
+            'fa-clock-o">'
+            '</i></span>%s<span class="input-group-btn"><button class="btn btn-default" '
+            'type="button">%s</button></span></div>' % (
+            input_html, _(u'Now')))
 
 
 class AdminSelectWidget(forms.Select):
-
     @property
     def media(self):
         return vendor('select.js', 'select.css', 'xadmin.widget.select.js')
@@ -59,6 +63,7 @@ class AdminSplitDateTime(forms.SplitDateTimeWidget):
     """
     A SplitDateTime Widget that has some admin-specific styling.
     """
+
     def __init__(self, attrs=None):
         widgets = [AdminDateWidget, AdminTimeWidget]
         # Note that we're calling MultiWidget, not SplitDateTimeWidget, because
@@ -67,11 +72,10 @@ class AdminSplitDateTime(forms.SplitDateTimeWidget):
 
     def format_output(self, rendered_widgets):
         return mark_safe(u'<div class="datetime clearfix">%s%s</div>' %
-                        (rendered_widgets[0], rendered_widgets[1]))
+                         (rendered_widgets[0], rendered_widgets[1]))
 
 
 class AdminRadioInput(RadioChoiceInput):
-
     def render(self, name=None, value=None, attrs=None, choices=()):
         name = name or self.name
         value = value or self.value
@@ -81,7 +85,7 @@ class AdminRadioInput(RadioChoiceInput):
             label_for = ' for="%s_%s"' % (self.attrs['id'], self.index)
         else:
             label_for = ''
-        choice_label = conditional_escape(force_unicode(self.choice_label))
+        choice_label = conditional_escape(to_force_unicode(self.choice_label))
         if attrs.get('inline', False):
             return mark_safe(u'<label%s class="radio-inline">%s %s</label>' % (label_for, self.tag(), choice_label))
         else:
@@ -89,7 +93,6 @@ class AdminRadioInput(RadioChoiceInput):
 
 
 class AdminRadioFieldRenderer(RadioFieldRenderer):
-
     def __iter__(self):
         for i, choice in enumerate(self.choices):
             yield AdminRadioInput(self.name, self.value, self.attrs.copy(), choice, i)
@@ -99,7 +102,7 @@ class AdminRadioFieldRenderer(RadioFieldRenderer):
         return AdminRadioInput(self.name, self.value, self.attrs.copy(), choice, idx)
 
     def render(self):
-        return mark_safe(u'\n'.join([force_unicode(w) for w in self]))
+        return mark_safe(u'\n'.join([to_force_unicode(w) for w in self]))
 
 
 class AdminRadioSelect(forms.RadioSelect):
@@ -114,7 +117,7 @@ class AdminCheckboxSelect(forms.CheckboxSelectMultiple):
         final_attrs = self.build_attrs(attrs, name=name)
         output = []
         # Normalize to strings
-        str_values = set([force_unicode(v) for v in value])
+        str_values = set([to_force_unicode(v) for v in value])
         for i, (option_value, option_label) in enumerate(chain(self.choices, choices)):
             # If an ID attribute was given, add a numeric index as a suffix,
             # so that the checkboxes don't all have the same ID attribute.
@@ -126,14 +129,16 @@ class AdminCheckboxSelect(forms.CheckboxSelectMultiple):
 
             cb = forms.CheckboxInput(
                 final_attrs, check_test=lambda value: value in str_values)
-            option_value = force_unicode(option_value)
+            option_value = to_force_unicode(option_value)
             rendered_cb = cb.render(name, option_value)
-            option_label = conditional_escape(force_unicode(option_label))
+            option_label = conditional_escape(to_force_unicode(option_label))
 
             if final_attrs.get('inline', False):
-                output.append(u'<label%s class="checkbox-inline">%s %s</label>' % (label_for, rendered_cb, option_label))
+                output.append(
+                    u'<label%s class="checkbox-inline">%s %s</label>' % (label_for, rendered_cb, option_label))
             else:
-                output.append(u'<div class="checkbox"><label%s>%s %s</label></div>' % (label_for, rendered_cb, option_label))
+                output.append(
+                    u'<div class="checkbox"><label%s>%s %s</label></div>' % (label_for, rendered_cb, option_label))
         return mark_safe(u'\n'.join(output))
 
 

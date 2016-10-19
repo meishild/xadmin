@@ -1,4 +1,3 @@
-import sys
 import copy
 import functools
 import datetime
@@ -7,7 +6,6 @@ from functools import update_wrapper
 from inspect import getargspec
 
 from django import forms
-from django.utils.encoding import force_unicode, force_text
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -19,7 +17,6 @@ from django.http import HttpResponse
 from django.template import Context, Template
 from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator, classonlymethod
-from django.utils.encoding import force_unicode, smart_unicode, smart_str
 from django.utils.http import urlencode
 from django.utils.itercompat import is_iterable
 from django.utils.safestring import mark_safe
@@ -28,7 +25,8 @@ from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.generic import View
 from collections import OrderedDict
-from xadmin.util import static, json, vendor, sortkeypicker
+from xadmin.util import static, json, vendor, sortkeypicker, to_unicode, to_force_unicode, to_smart_unicode, \
+    to_force_text
 
 from xadmin.models import Log
 
@@ -38,9 +36,11 @@ csrf_protect_m = method_decorator(csrf_protect)
 class IncorrectPluginArg(Exception):
     pass
 
+
 def get_content_type_for_model(obj):
     from django.contrib.contenttypes.models import ContentType
     return ContentType.objects.get_for_model(obj, for_concrete_model=False)
+
 
 def filter_chain(filters, token, func, *args, **kwargs):
     if token == -1:
@@ -58,6 +58,7 @@ def filter_chain(filters, token, func, *args, **kwargs):
                     raise IncorrectPluginArg(u'Plugin filter method need a arg to receive parent method result.')
             else:
                 return fm(func if fargs[1] == '__' else func(), *args, **kwargs)
+
         return filter_chain(filters, token - 1, _inner_method, *args, **kwargs)
 
 
@@ -74,10 +75,11 @@ def filter_hook(func):
         if self.plugins:
             filters = [(getattr(getattr(p, tag), 'priority', 10), getattr(p, tag))
                        for p in self.plugins if callable(getattr(p, tag, None))]
-            filters = [f for p, f in sorted(filters, key=lambda x:x[0])]
+            filters = [f for p, f in sorted(filters, key=lambda x: x[0])]
             return filter_chain(filters, len(filters) - 1, _inner_method, *args, **kwargs)
         else:
             return _inner_method()
+
     return method
 
 
@@ -89,7 +91,7 @@ def inclusion_tag(file_name, context_class=Context, takes_context=False):
             from django.template.loader import get_template, select_template
             if isinstance(file_name, Template):
                 t = file_name
-            elif not isinstance(file_name, basestring) and is_iterable(file_name):
+            elif not isinstance(file_name, str) and is_iterable(file_name):
                 t = select_template(file_name)
             else:
                 t = get_template(file_name)
@@ -105,6 +107,7 @@ def inclusion_tag(file_name, context_class=Context, takes_context=False):
             nodes.append(t.render(_dict))
 
         return method
+
     return wrap
 
 
@@ -120,11 +123,10 @@ class JSONEncoder(DjangoJSONEncoder):
             try:
                 return super(JSONEncoder, self).default(o)
             except Exception:
-                return smart_unicode(o)
+                return to_smart_unicode(o)
 
 
 class BaseAdminObject(object):
-
     def get_view(self, view_class, option_class=None, *args, **kwargs):
         opts = kwargs.pop('opts', {})
         return self.admin_site.get_view_class(view_class, option_class, **opts)(self.request, *args, **kwargs)
@@ -146,7 +148,8 @@ class BaseAdminObject(object):
 
     def has_model_perm(self, model, name, user=None):
         user = user or self.user
-        return user.has_perm(self.get_model_perm(model, name)) or (name == 'view' and self.has_model_perm(model, 'change', user))
+        return user.has_perm(self.get_model_perm(model, name)) or (
+        name == 'view' and self.has_model_perm(model, 'change', user))
 
     def get_query_string(self, new_params=None, remove=None):
         if new_params is None:
@@ -155,7 +158,7 @@ class BaseAdminObject(object):
             remove = []
         p = dict(self.request.GET.items()).copy()
         for r in remove:
-            for k in p.keys():
+            for k in list(p.keys()):
                 if k.startswith(r):
                     del p[k]
         for k, v in new_params.items():
@@ -173,7 +176,7 @@ class BaseAdminObject(object):
             remove = []
         p = dict(self.request.GET.items()).copy()
         for r in remove:
-            for k in p.keys():
+            for k in list(p.keys()):
                 if k.startswith(r):
                     del p[k]
         for k, v in new_params.items():
@@ -212,7 +215,7 @@ class BaseAdminObject(object):
 
     def log(self, flag, message, obj=None):
         log = Log(
-            user=self.user, 
+            user=self.user,
             ip_addr=self.request.META['REMOTE_ADDR'],
             action_flag=flag,
             message=message
@@ -220,12 +223,11 @@ class BaseAdminObject(object):
         if obj:
             log.content_type = get_content_type_for_model(obj)
             log.object_id = obj.pk
-            log.object_repr = force_text(obj)
+            log.object_repr = to_force_text(obj)
         log.save()
 
 
 class BaseAdminPlugin(BaseAdminObject):
-
     def __init__(self, admin_view):
         self.admin_view = admin_view
         self.admin_site = admin_view.admin_site
@@ -261,7 +263,6 @@ class BaseAdminView(BaseAdminObject, View):
     def as_view(cls):
         def view(request, *args, **kwargs):
             self = cls(request, *args, **kwargs)
-
             if hasattr(self, 'get') and not hasattr(self, 'head'):
                 self.head = self.get
 
@@ -308,12 +309,11 @@ class BaseAdminView(BaseAdminObject, View):
 
 
 class CommAdminView(BaseAdminView):
-
     base_template = 'xadmin/base_site.html'
     menu_template = 'xadmin/includes/sitemenu_default.html'
 
-    site_title = getattr(settings,"XADMIN_TITLE",_(u"Django Xadmin"))
-    site_footer = getattr(settings,"XADMIN_FOOTER_TITLE",_(u"my-company.inc"))
+    site_title = getattr(settings, "XADMIN_TITLE", _(u"Django Xadmin"))
+    site_footer = getattr(settings, "XADMIN_FOOTER_TITLE", _(u"my-company.inc"))
 
     global_models_icon = {}
     default_model_icon = None
@@ -334,6 +334,7 @@ class CommAdminView(BaseAdminView):
             if 'menus' in menu:
                 for m in menu['menus']:
                     get_url(m, had_urls)
+
         get_url({'menus': site_menu}, had_urls)
 
         nav_menu = OrderedDict()
@@ -344,7 +345,7 @@ class CommAdminView(BaseAdminView):
             app_label = model._meta.app_label
             app_icon = None
             model_dict = {
-                'title': unicode(capfirst(model._meta.verbose_name_plural)),
+                'title': to_unicode(capfirst(model._meta.verbose_name_plural)),
                 'url': self.get_model_url(model, "changelist"),
                 'icon': self.get_model_icon(model),
                 'perm': self.get_model_perm(model, 'view'),
@@ -358,12 +359,12 @@ class CommAdminView(BaseAdminView):
                 nav_menu[app_key]['menus'].append(model_dict)
             else:
                 # Find app title
-                app_title = unicode(app_label.title())
+                app_title = to_unicode(app_label.title())
                 if app_label.lower() in self.apps_label_title:
                     app_title = self.apps_label_title[app_label.lower()]
                 else:
-                    app_title = unicode(apps.get_app_config(app_label).verbose_name)
-                #find app icon
+                    app_title = to_unicode(apps.get_app_config(app_label).verbose_name)
+                # find app icon
                 if app_label.lower() in self.apps_icons:
                     app_icon = self.apps_icons[app_label.lower()]
 
@@ -376,7 +377,7 @@ class CommAdminView(BaseAdminView):
             if app_icon:
                 app_menu['first_icon'] = app_icon
             elif ('first_icon' not in app_menu or
-                    app_menu['first_icon'] == self.default_model_icon) and model_dict.get('icon'):
+                          app_menu['first_icon'] == self.default_model_icon) and model_dict.get('icon'):
                 app_menu['first_icon'] = model_dict['icon']
 
             if 'first_url' not in app_menu and model_dict.get('url'):
@@ -386,9 +387,9 @@ class CommAdminView(BaseAdminView):
             menu['menus'].sort(key=sortkeypicker(['order', 'title']))
 
         nav_menu = nav_menu.values()
-        nav_menu.sort(key=lambda x: x['title'])
+        # nav_menu.sort(key=lambda x: x['title'])
 
-        site_menu.extend(nav_menu)
+        site_menu.extend(sorted(nav_menu, key=lambda x: x['title']))
 
         return site_menu
 
@@ -423,7 +424,7 @@ class CommAdminView(BaseAdminView):
                 return item
 
             nav_menu = [filter_item(item) for item in menus if check_menu_permission(item)]
-            nav_menu = filter(lambda x:x, nav_menu)
+            nav_menu = list(filter(lambda x: x, nav_menu))
 
             if not settings.DEBUG:
                 self.request.session['nav_menu'] = json.dumps(nav_menu)
@@ -445,6 +446,7 @@ class CommAdminView(BaseAdminView):
             if selected:
                 menu['selected'] = True
             return selected
+
         for menu in nav_menu:
             check_selected(menu, self.request.path)
 
@@ -471,10 +473,10 @@ class CommAdminView(BaseAdminView):
         return [{
             'url': self.get_admin_url('index'),
             'title': _('Home')
-            }]
+        }]
+
 
 class ModelAdminView(CommAdminView):
-
     fields = None
     exclude = None
     ordering = None
@@ -495,7 +497,7 @@ class ModelAdminView(CommAdminView):
             "opts": self.opts,
             "app_label": self.app_label,
             "model_name": self.model_name,
-            "verbose_name": force_unicode(self.opts.verbose_name),
+            "verbose_name": to_force_unicode(self.opts.verbose_name),
             'model_icon': self.get_model_icon(self.model),
         }
         context = super(ModelAdminView, self).get_context()
@@ -537,7 +539,7 @@ class ModelAdminView(CommAdminView):
     def model_admin_url(self, name, *args, **kwargs):
         return reverse(
             "%s:%s_%s_%s" % (self.admin_site.app_name, self.opts.app_label,
-            self.model_name, name), args=args, kwargs=kwargs)
+                             self.model_name, name), args=args, kwargs=kwargs)
 
     def get_model_perms(self):
         """
@@ -579,8 +581,9 @@ class ModelAdminView(CommAdminView):
         view_codename = get_permission_codename('view', self.opts)
         change_codename = get_permission_codename('change', self.opts)
 
-        return ('view' not in self.remove_permissions) and (self.user.has_perm('%s.%s' % (self.app_label, view_codename)) or \
-            self.user.has_perm('%s.%s' % (self.app_label, change_codename)))
+        return ('view' not in self.remove_permissions) and (
+        self.user.has_perm('%s.%s' % (self.app_label, view_codename)) or \
+        self.user.has_perm('%s.%s' % (self.app_label, change_codename)))
 
     def has_add_permission(self):
         codename = get_permission_codename('add', self.opts)

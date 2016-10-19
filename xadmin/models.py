@@ -1,23 +1,25 @@
 import json
-import django
+import sys
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext_lazy as _, ugettext
-from django.core.urlresolvers import NoReverseMatch, reverse
+from django.core.urlresolvers import reverse
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.base import ModelBase
-from django.utils.encoding import python_2_unicode_compatible, smart_text, smart_unicode
-
 from django.db.models.signals import post_migrate
 from django.contrib.auth.models import Permission
 
 import datetime
 import decimal
-from xadmin.util import quote
+from xadmin.util import to_smart_unicode, to_smart_text
+
+if sys.version < '3':
+    from django.utils.encoding import python_2_unicode_compatible
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
+
 
 def add_view_permissions(sender, **kwargs):
     """
@@ -35,10 +37,12 @@ def add_view_permissions(sender, **kwargs):
             Permission.objects.create(content_type=content_type,
                                       codename=codename,
                                       name="Can view %s" % content_type.name)
-            #print "Added view permission for %s" % content_type.name
+            # print "Added view permission for %s" % content_type.name
+
 
 # check for all our view permissions after a syncdb
 post_migrate.connect(add_view_permissions)
+
 
 class Bookmark(models.Model):
     title = models.CharField(_(u'Title'), max_length=128)
@@ -77,7 +81,7 @@ class JSONEncoder(DjangoJSONEncoder):
             try:
                 return super(JSONEncoder, self).default(o)
             except Exception:
-                return smart_unicode(o)
+                return to_smart_unicode(o)
 
 
 class UserSettings(models.Model):
@@ -133,6 +137,7 @@ class UserWidget(models.Model):
         verbose_name = _(u'User Widget')
         verbose_name_plural = _('User Widgets')
 
+
 class Log(models.Model):
     action_time = models.DateTimeField(
         _('action time'),
@@ -162,7 +167,7 @@ class Log(models.Model):
         ordering = ('-action_time',)
 
     def __repr__(self):
-        return smart_text(self.action_time)
+        return to_smart_text(self.action_time)
 
     def __str__(self):
         if self.action_flag == 'create':
@@ -180,4 +185,3 @@ class Log(models.Model):
     def get_edited_object(self):
         "Returns the edited object represented by this log entry"
         return self.content_type.get_object_for_this_type(pk=self.object_id)
-

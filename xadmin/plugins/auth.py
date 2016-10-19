@@ -1,4 +1,5 @@
 # coding=utf-8
+from crispy_forms.helper import FormHelper
 from django import forms
 from django.contrib.auth.forms import (UserCreationForm, UserChangeForm,
                                        AdminPasswordChangeForm, PasswordChangeForm)
@@ -12,11 +13,10 @@ from django.utils.translation import ugettext as _
 from django.views.decorators.debug import sensitive_post_parameters
 from django.forms import ModelMultipleChoiceField
 from django.contrib.auth.models import User
-from xadmin.layout import Fieldset, Main, Side, Row, FormHelper
+from xadmin.layout import Fieldset, Main, Side, Row
 from xadmin.sites import site
-from xadmin.util import unquote
+from xadmin.util import unquote, to_unicode
 from xadmin.views import BaseAdminPlugin, ModelFormAdminView, ModelAdminView, CommAdminView, csrf_protect_m
-
 
 ACTION_NAME = {
     'add': _('Can add %s'),
@@ -36,7 +36,6 @@ def get_permission_name(p):
 
 
 class PermissionModelMultipleChoiceField(ModelMultipleChoiceField):
-
     def label_from_instance(self, p):
         return get_permission_name(p)
 
@@ -106,14 +105,15 @@ class UserAdmin(object):
 
 
 class PermissionAdmin(object):
-
     def show_name(self, p):
         return get_permission_name(p)
+
     show_name.short_description = _('Permission Name')
     show_name.is_column = True
 
     model_icon = 'fa fa-lock'
-    list_display = ('show_name', )
+    list_display = ('show_name',)
+
 
 site.register(Group, GroupAdmin)
 site.register(User, UserAdmin)
@@ -121,7 +121,6 @@ site.register(Permission, PermissionAdmin)
 
 
 class UserFieldPlugin(BaseAdminPlugin):
-
     user_fields = []
 
     def get_field_attrs(self, __, db_field, **kwargs):
@@ -131,17 +130,17 @@ class UserFieldPlugin(BaseAdminPlugin):
 
     def get_form_datas(self, datas):
         if self.user_fields and 'data' in datas:
-            if hasattr(datas['data'],'_mutable') and not datas['data']._mutable:
+            if hasattr(datas['data'], '_mutable') and not datas['data']._mutable:
                 datas['data'] = datas['data'].copy()
             for f in self.user_fields:
                 datas['data'][f] = self.user.id
         return datas
 
+
 site.register_plugin(UserFieldPlugin, ModelFormAdminView)
 
 
 class ModelPermissionPlugin(BaseAdminPlugin):
-
     user_can_access_owned_objects_only = False
     user_owned_objects_field = 'user'
 
@@ -155,17 +154,19 @@ class ModelPermissionPlugin(BaseAdminPlugin):
     def get_list_display(self, list_display):
         if self.user_can_access_owned_objects_only and \
                 not self.user.is_superuser and \
-                self.user_owned_objects_field in list_display:
+                        self.user_owned_objects_field in list_display:
             list_display.remove(self.user_owned_objects_field)
         return list_display
+
 
 site.register_plugin(ModelPermissionPlugin, ModelAdminView)
 
 
 class AccountMenuPlugin(BaseAdminPlugin):
-
     def block_top_account_menu(self, context, nodes):
-        return '<li><a href="%s"><i class="fa fa-key"></i> %s</a></li>' % (self.get_admin_url('account_password'), _('Change Password'))
+        return '<li><a href="%s"><i class="fa fa-key"></i> %s</a></li>' % (
+        self.get_admin_url('account_password'), _('Change Password'))
+
 
 site.register_plugin(AccountMenuPlugin, CommAdminView)
 
@@ -196,7 +197,7 @@ class ChangePasswordView(ModelAdminView):
         helper.include_media = False
         self.form.helper = helper
         context.update({
-            'title': _('Change password: %s') % escape(unicode(self.obj)),
+            'title': _('Change password: %s') % escape(to_unicode(self.obj)),
             'form': self.form,
             'has_delete_permission': False,
             'has_change_permission': True,
@@ -257,6 +258,7 @@ class ChangeAccountPasswordView(ChangePasswordView):
             return HttpResponseRedirect(self.get_admin_url('index'))
         else:
             return self.get_response()
+
 
 site.register_view(r'^auth/user/(.+)/password/$',
                    ChangePasswordView, name='user_change_password')

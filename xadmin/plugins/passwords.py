@@ -11,7 +11,6 @@ from xadmin.views.website import LoginView
 
 
 class ResetPasswordSendView(BaseAdminView):
-
     need_site_permission = False
 
     password_reset_form = PasswordResetForm
@@ -51,23 +50,26 @@ class ResetPasswordSendView(BaseAdminView):
             form.save(**opts)
             context = super(ResetPasswordSendView, self).get_context()
             return TemplateResponse(request, self.password_reset_done_template, context,
-                                current_app=self.admin_site.name)
+                                    current_app=self.admin_site.name)
         else:
             return self.get(request, form=form)
 
+
 site.register_view(r'^xadmin/password_reset/$', ResetPasswordSendView, name='xadmin_password_reset')
 
-class ResetLinkPlugin(BaseAdminPlugin):
 
+class ResetLinkPlugin(BaseAdminPlugin):
     def block_form_bottom(self, context, nodes):
         reset_link = self.get_admin_url('xadmin_password_reset')
-        return '<div class="text-info" style="margin-top:15px;"><a href="%s"><i class="fa fa-question-sign"></i> %s</a></div>' % (reset_link, _('Forgotten your password or username?'))
+        return '<div class="text-info" style="margin-top:15px;"><a href="%s"><i class="fa fa-question-sign"></i> ' \
+               '%s</a></div>' % (
+        reset_link, _('Forgotten your password or username?'))
+
 
 site.register_plugin(ResetLinkPlugin, LoginView)
 
 
 class ResetPasswordComfirmView(BaseAdminView):
-
     need_site_permission = False
 
     password_reset_set_form = SetPasswordForm
@@ -77,11 +79,11 @@ class ResetPasswordComfirmView(BaseAdminView):
     def do_view(self, request, uidb36, token, *args, **kwargs):
         context = super(ResetPasswordComfirmView, self).get_context()
         return password_reset_confirm(request, uidb36, token,
-                   template_name=self.password_reset_confirm_template,
-                   token_generator=self.password_reset_token_generator,
-                   set_password_form=self.password_reset_set_form,
-                   post_reset_redirect=self.get_admin_url('xadmin_password_reset_complete'),
-                   current_app=self.admin_site.name, extra_context=context)
+                                      template_name=self.password_reset_confirm_template,
+                                      token_generator=self.password_reset_token_generator,
+                                      set_password_form=self.password_reset_set_form,
+                                      post_reset_redirect=self.get_admin_url('xadmin_password_reset_complete'),
+                                      current_app=self.admin_site.name, extra_context=context)
 
     def get(self, request, uidb36, token, *args, **kwargs):
         return self.do_view(request, uidb36, token)
@@ -91,14 +93,15 @@ class ResetPasswordComfirmView(BaseAdminView):
 
     def get_media(self):
         return super(ResetPasswordComfirmView, self).get_media() + \
-            self.vendor('xadmin.page.form.js', 'xadmin.form.css')
+               self.vendor('xadmin.page.form.js', 'xadmin.form.css')
 
-site.register_view(r'^xadmin/password_reset/(?P<uidb36>[0-9A-Za-z]{1,13})-(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+
+site.register_view(
+    r'^xadmin/password_reset/(?P<uidb36>[0-9A-Za-z]{1,13})-(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
     ResetPasswordComfirmView, name='xadmin_password_reset_confirm')
 
 
 class ResetPasswordCompleteView(BaseAdminView):
-
     need_site_permission = False
 
     password_reset_complete_template = 'xadmin/auth/password_reset/complete.html'
@@ -110,5 +113,6 @@ class ResetPasswordCompleteView(BaseAdminView):
         return TemplateResponse(request, self.password_reset_complete_template, context,
                                 current_app=self.admin_site.name)
 
-site.register_view(r'^xadmin/password_reset/complete/$', ResetPasswordCompleteView, name='xadmin_password_reset_complete')
 
+site.register_view(r'^xadmin/password_reset/complete/$', ResetPasswordCompleteView,
+                   name='xadmin_password_reset_complete')

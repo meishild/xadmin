@@ -1,22 +1,20 @@
-
 import datetime
 import decimal
 import calendar
 
+from django.contrib.admin.utils import label_for_field
 from django.template import loader
 from django.http import HttpResponseNotFound
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
-from django.utils.encoding import smart_unicode
 from django.db import models
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _, ugettext
-
 from xadmin.plugins.utils import get_context_dict
 from xadmin.sites import site
 from xadmin.views import BaseAdminPlugin, ListAdminView
 from xadmin.views.dashboard import ModelBaseWidget, widget_manager
-from xadmin.util import lookup_field, label_for_field, force_unicode, json
+from xadmin.util import lookup_field, json, to_force_unicode, to_smart_unicode
 
 
 @widget_manager.register
@@ -52,14 +50,15 @@ class ChartWidget(ModelBaseWidget):
 
     def filte_choices_model(self, model, modeladmin):
         return bool(getattr(modeladmin, 'data_charts', None)) and \
-            super(ChartWidget, self).filte_choices_model(model, modeladmin)
+               super(ChartWidget, self).filte_choices_model(model, modeladmin)
 
     def get_chart_url(self, name, v):
         return self.model_admin_url('chart', name) + "?" + urlencode(self.list_params)
 
     def context(self, context):
         context.update({
-            'charts': [{"name": name, "title": v['title'], 'url': self.get_chart_url(name, v)} for name, v in self.charts.items()],
+            'charts': [{"name": name, "title": v['title'], 'url': self.get_chart_url(name, v)} for name, v in
+                       self.charts.items()],
         })
 
     # Media
@@ -77,11 +76,10 @@ class JSONEncoder(DjangoJSONEncoder):
             try:
                 return super(JSONEncoder, self).default(o)
             except Exception:
-                return smart_unicode(o)
+                return to_smart_unicode(o)
 
 
 class ChartsPlugin(BaseAdminPlugin):
-
     data_charts = {}
 
     def init_request(self, *args, **kwargs):
@@ -97,14 +95,14 @@ class ChartsPlugin(BaseAdminPlugin):
     # Block Views
     def block_results_top(self, context, nodes):
         context.update({
-            'charts': [{"name": name, "title": v['title'], 'url': self.get_chart_url(name, v)} for name, v in self.data_charts.items()],
+            'charts': [{"name": name, "title": v['title'], 'url': self.get_chart_url(name, v)} for name, v in
+                       self.data_charts.items()],
         })
         nodes.append(loader.render_to_string('xadmin/blocks/model_list.results_top.charts.html',
                                              context=get_context_dict(context)))
 
 
 class ChartsView(ListAdminView):
-
     data_charts = {}
 
     def get_ordering(self):
@@ -124,8 +122,8 @@ class ChartsView(ListAdminView):
         self.y_fields = (
             y_fields,) if type(y_fields) not in (list, tuple) else y_fields
 
-        datas = [{"data":[], "label": force_unicode(label_for_field(
-            i, self.model, model_admin=self))} for i in self.y_fields]
+        datas = [{"data": [], "label": to_force_unicode(label_for_field(i, self.model, model_admin=self))} for i in
+                 self.y_fields]
 
         self.make_result_list()
 
@@ -156,6 +154,7 @@ class ChartsView(ListAdminView):
         result = json.dumps(content, cls=JSONEncoder, ensure_ascii=False)
 
         return HttpResponse(result)
+
 
 site.register_plugin(ChartsPlugin, ListAdminView)
 site.register_modelview(r'^chart/(.+)/$', ChartsView, name='%s_%s_chart')

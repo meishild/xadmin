@@ -1,4 +1,3 @@
-
 from xadmin.sites import site
 from xadmin.views import BaseAdminPlugin, CommAdminView
 
@@ -9,7 +8,6 @@ BUILDIN_STYLES = {
 
 
 class SiteMenuStylePlugin(BaseAdminPlugin):
-
     menu_style = None
 
     def init_request(self, *args, **kwargs):
@@ -18,5 +16,6 @@ class SiteMenuStylePlugin(BaseAdminPlugin):
     def get_context(self, context):
         context['menu_template'] = BUILDIN_STYLES[self.menu_style]
         return context
+
 
 site.register_plugin(SiteMenuStylePlugin, CommAdminView)

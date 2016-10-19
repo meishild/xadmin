@@ -9,7 +9,6 @@ REFRESH_VAR = '_refresh'
 
 
 class RefreshPlugin(BaseAdminPlugin):
-
     refresh_times = []
 
     # Media
@@ -27,10 +26,10 @@ class RefreshPlugin(BaseAdminPlugin):
                 'clean_refresh_url': self.admin_view.get_query_string(remove=(REFRESH_VAR,)),
                 'current_refresh': current_refresh,
                 'refresh_times': [{
-                    'time': r,
-                    'url': self.admin_view.get_query_string({REFRESH_VAR: r}),
-                    'selected': str(r) == current_refresh,
-                } for r in self.refresh_times],
+                                      'time': r,
+                                      'url': self.admin_view.get_query_string({REFRESH_VAR: r}),
+                                      'selected': str(r) == current_refresh,
+                                  } for r in self.refresh_times],
             })
             nodes.append(loader.render_to_string('xadmin/blocks/model_list.top_toolbar.refresh.html',
                                                  get_context_dict(context)))

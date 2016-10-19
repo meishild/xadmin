@@ -1,29 +1,37 @@
 import xadmin
 from xadmin import views
-from models import IDC, Host, MaintainLog, HostGroup, AccessRecord
+from .models import IDC, Host, MaintainLog, HostGroup, AccessRecord
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
 from xadmin.plugins.inline import Inline
 from xadmin.plugins.batch import BatchChangeAction
 
+
 class MainDashboard(object):
     widgets = [
         [
-            {"type": "html", "title": "Test Widget", "content": "<h3> Welcome to Xadmin! </h3><p>Join Online Group: <br/>QQ Qun : 282936295</p>"},
-            {"type": "chart", "model": "app.accessrecord", 'chart': 'user_count', 'params': {'_p_date__gte': '2013-01-08', 'p': 1, '_p_date__lt': '2013-01-29'}},
+            {"type": "html", "title": "Test Widget",
+             "content": "<h3> Welcome to Xadmin! </h3><p>Join Online Group: <br/>QQ Qun : 282936295</p>"},
+            {"type": "chart", "model": "app.accessrecord", 'chart': 'user_count',
+             'params': {'_p_date__gte': '2013-01-08', 'p': 1, '_p_date__lt': '2013-01-29'}},
             {"type": "list", "model": "app.host", 'params': {
-                'o':'-guarantee_date'}},
+                'o': '-guarantee_date'}},
         ],
         [
-            {"type": "qbutton", "title": "Quick Start", "btns": [{'model': Host}, {'model':IDC}, {'title': "Google", 'url': "http://www.google.com"}]},
+            {"type": "qbutton", "title": "Quick Start",
+             "btns": [{'model': Host}, {'model': IDC}, {'title': "Google", 'url': "http://www.google.com"}]},
             {"type": "addform", "model": MaintainLog},
         ]
     ]
+
+
 xadmin.sites.site.register(views.website.IndexView, MainDashboard)
 
 
 class BaseSetting(object):
     enable_themes = True
     use_bootswatch = True
+
+
 xadmin.sites.site.register(views.BaseAdminView, BaseSetting)
 
 
@@ -32,7 +40,9 @@ class GlobalSetting(object):
     global_models_icon = {
         Host: 'fa fa-laptop', IDC: 'fa fa-cloud'
     }
-    menu_style = 'default'#'accordion'
+    menu_style = 'default'  # 'accordion'
+
+
 xadmin.sites.site.register(views.CommAdminView, GlobalSetting)
 
 
@@ -62,6 +72,7 @@ class IDCAdmin(object):
 class HostAdmin(object):
     def open_web(self, instance):
         return "<a href='http://%s' target='_blank'>Open</a>" % instance.ip
+
     open_web.short_description = "Acts"
     open_web.allow_tags = True
     open_web.is_column = True
@@ -75,10 +86,12 @@ class HostAdmin(object):
 
     search_fields = ['name', 'ip', 'description']
     list_filter = ['idc', 'guarantee_date', 'status', 'brand', 'model',
-                   'cpu', 'core_num', 'hard_disk', 'memory', ('service_type',xadmin.filters.MultiSelectFieldListFilter)]
-    
-    list_quick_filter = ['service_type',{'field':'idc__name','limit':10}]
-    list_bookmarks = [{'title': "Need Guarantee", 'query': {'status__exact': 2}, 'order': ('-guarantee_date',), 'cols': ('brand', 'guarantee_date', 'service_type')}]
+                   'cpu', 'core_num', 'hard_disk', 'memory',
+                   ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
+
+    list_quick_filter = ['service_type', {'field': 'idc__name', 'limit': 10}]
+    list_bookmarks = [{'title': "Need Guarantee", 'query': {'status__exact': 2}, 'order': ('-guarantee_date',),
+                       'cols': ('brand', 'guarantee_date', 'service_type')}]
 
     show_detail_fields = ('idc',)
     list_editable = (
@@ -118,16 +131,18 @@ class HostAdmin(object):
     )
     inlines = [MaintainInline]
     reversion_enable = True
-    
+
     data_charts = {
-        "host_service_type_counts": {'title': u"Host service type count", "x-field": "service_type", "y-field": ("service_type",), 
-                              "option": {
-                                         "series": {"bars": {"align": "center", "barWidth": 0.8,'show':True}}, 
+        "host_service_type_counts": {'title': u"Host service type count", "x-field": "service_type",
+                                     "y-field": ("service_type",),
+                                     "option": {
+                                         "series": {"bars": {"align": "center", "barWidth": 0.8, 'show': True}},
                                          "xaxis": {"aggregate": "count", "mode": "categories"},
-                                         },
-                              },
+                                     },
+                                     },
     }
-    
+
+
 class HostGroupAdmin(object):
     list_display = ('name', 'description')
     list_display_links = ('name',)
@@ -168,6 +183,7 @@ class MaintainLogAdmin(object):
 class AccessRecordAdmin(object):
     def avg_count(self, instance):
         return int(instance.view_count / instance.user_count)
+
     avg_count.short_description = "Avg Count"
     avg_count.allow_tags = True
     avg_count.is_column = True
@@ -181,19 +197,20 @@ class AccessRecordAdmin(object):
 
     refresh_times = (3, 5, 10)
     data_charts = {
-        "user_count": {'title': u"User Report", "x-field": "date", "y-field": ("user_count", "view_count"), "order": ('date',)},
+        "user_count": {'title': u"User Report", "x-field": "date", "y-field": ("user_count", "view_count"),
+                       "order": ('date',)},
         "avg_count": {'title': u"Avg Report", "x-field": "date", "y-field": ('avg_count',), "order": ('date',)},
-        "per_month": {'title': u"Monthly Users", "x-field": "_chart_month", "y-field": ("user_count", ), 
-                              "option": {
-                                         "series": {"bars": {"align": "center", "barWidth": 0.8,'show':True}}, 
-                                         "xaxis": {"aggregate": "sum", "mode": "categories"},
-                                         },
-                            },
+        "per_month": {'title': u"Monthly Users", "x-field": "_chart_month", "y-field": ("user_count",),
+                      "option": {
+                          "series": {"bars": {"align": "center", "barWidth": 0.8, 'show': True}},
+                          "xaxis": {"aggregate": "sum", "mode": "categories"},
+                      },
+                      },
     }
-    
-    def _chart_month(self,obj):
+
+    def _chart_month(self, obj):
         return obj.date.strftime("%B")
-        
+
 
 xadmin.sites.site.register(Host, HostAdmin)
 xadmin.sites.site.register(HostGroup, HostGroupAdmin)

@@ -1,3 +1,4 @@
+import sys
 from django.template.context import RequestContext
 
 
@@ -10,7 +11,10 @@ def get_context_dict(context):
     """
     if isinstance(context, RequestContext):
         ctx = {}
-        map(ctx.update, context.dicts)
+        if sys.version < '3':
+            map(ctx.update, context.dicts)
+        else:
+            list(map(ctx.update, context.dicts))
     else:
         ctx = context
     return ctx

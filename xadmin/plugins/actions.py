@@ -1,3 +1,4 @@
+import sys
 from collections import OrderedDict
 from django import forms
 from django.core.exceptions import PermissionDenied
@@ -5,7 +6,7 @@ from django.db import router
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.template.response import TemplateResponse
-from django.utils.encoding import force_unicode
+
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ungettext
 from django.utils.text import capfirst
@@ -14,22 +15,22 @@ from django.contrib.admin.utils import get_deleted_objects
 
 from xadmin.plugins.utils import get_context_dict
 from xadmin.sites import site
-from xadmin.util import model_format_dict, model_ngettext
+from xadmin.util import model_format_dict, model_ngettext, to_force_unicode
 from xadmin.views import BaseAdminPlugin, ListAdminView
 from xadmin.views.base import filter_hook, ModelAdminView
-
 
 ACTION_CHECKBOX_NAME = '_selected_action'
 checkbox = forms.CheckboxInput({'class': 'action-select'}, lambda value: False)
 
 
 def action_checkbox(obj):
-    return checkbox.render(ACTION_CHECKBOX_NAME, force_unicode(obj.pk))
+    return checkbox.render(ACTION_CHECKBOX_NAME, to_force_unicode(obj.pk))
 action_checkbox.short_description = mark_safe(
     '<input type="checkbox" id="action-toggle" />')
 action_checkbox.allow_tags = True
 action_checkbox.allow_export = False
 action_checkbox.is_column = False
+
 
 class BaseActionView(ModelAdminView):
     action_name = None
@@ -102,9 +103,9 @@ class DeleteSelectedAction(BaseActionView):
             return None
 
         if len(queryset) == 1:
-            objects_name = force_unicode(self.opts.verbose_name)
+            objects_name = to_force_unicode(self.opts.verbose_name)
         else:
-            objects_name = force_unicode(self.opts.verbose_name_plural)
+            objects_name = to_force_unicode(self.opts.verbose_name_plural)
 
         if perms_needed or protected:
             title = _("Cannot delete %(name)s") % {"name": objects_name}
@@ -242,7 +243,12 @@ class ActionPlugin(BaseAdminPlugin):
         tuple (name, description).
         """
         choices = []
-        for ac, name, description, icon in self.actions.itervalues():
+        if sys.version < '3':
+            items = self.actions.itervalues()
+        else:
+            items = self.actions.values()
+
+        for ac, name, description, icon in items:
             choice = (name, description % model_format_dict(self.opts), icon)
             choices.append(choice)
         return choices

@@ -16,7 +16,6 @@ AGGREGATE_TITLE = {
 
 
 class AggregationPlugin(BaseAdminPlugin):
-
     aggregate_fields = {}
 
     def init_request(self, *args, **kwargs):
@@ -36,7 +35,8 @@ class AggregationPlugin(BaseAdminPlugin):
                     item.text = ""
                 else:
                     item.text = display_for_field(obj[key], f)
-                    item.wraps.append('%%s<span class="aggregate_title label label-info">%s</span>' % AGGREGATE_TITLE[agg_method])
+                    item.wraps.append(
+                        '%%s<span class="aggregate_title label label-info">%s</span>' % AGGREGATE_TITLE[agg_method])
                     item.classes.append(agg_method)
             except FieldDoesNotExist:
                 item.text = ""

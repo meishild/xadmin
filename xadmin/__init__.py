@@ -1,7 +1,7 @@
-
-VERSION = (0,6,0)
+VERSION = (1, 6, 0)
 
 from xadmin.sites import AdminSite, site
+
 
 class Settings(object):
     pass
@@ -64,5 +64,6 @@ def autodiscover():
             # attempting to import it, otherwise we want it to bubble up.
             if module_has_submodule(mod, 'adminx'):
                 raise
+
 
 default_app_config = 'xadmin.apps.XAdminConfig'

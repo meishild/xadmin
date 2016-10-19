@@ -1,7 +1,10 @@
 import copy
+import sys
 
+from crispy_forms.helper import FormHelper
 from crispy_forms.utils import TEMPLATE_PACK
 from django import forms
+from django.contrib.admin.utils import label_for_field
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.db import models
@@ -9,15 +12,16 @@ from django.forms.models import modelform_factory
 from django.http import Http404
 from django.template import loader
 from django.template.response import TemplateResponse
-from django.utils.encoding import force_unicode, smart_unicode
+
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.html import conditional_escape
-from xadmin.layout import FormHelper, Layout, Fieldset, Container, Column, Field, Col, TabHolder
-from xadmin.util import unquote, lookup_field, display_for_field, boolean_icon, label_for_field
+from xadmin.layout import Layout, Fieldset, Container, Column, Field, Col, TabHolder
+from xadmin.util import unquote, lookup_field, display_for_field, boolean_icon, to_force_unicode, \
+    is_string, to_smart_unicode
 
-from base import ModelAdminView, filter_hook, csrf_protect_m
+from .base import ModelAdminView, filter_hook, csrf_protect_m
 
 # Text to display within change-list table cells if the value is blank.
 EMPTY_CHANGELIST_VALUE = _('Null')
@@ -60,7 +64,6 @@ class ShowField(Field):
 
 
 class ResultField(object):
-
     def __init__(self, obj, field_name, admin_view=None):
         self.text = '&nbsp;'
         self.wraps = []
@@ -93,7 +96,7 @@ class ResultField(object):
                     self.allow_tags = True
                     self.text = boolean_icon(value)
                 else:
-                    self.text = smart_unicode(value)
+                    self.text = to_smart_unicode(value)
             else:
                 if isinstance(f.rel, models.ManyToOneRel):
                     self.text = getattr(self.obj, f.name)
@@ -107,7 +110,7 @@ class ResultField(object):
     def val(self):
         text = mark_safe(
             self.text) if self.allow_tags else conditional_escape(self.text)
-        if force_unicode(text) == '' or text == 'None' or text == EMPTY_CHANGELIST_VALUE:
+        if to_force_unicode(text) == '' or text == 'None' or text == EMPTY_CHANGELIST_VALUE:
             text = mark_safe(
                 '<span class="text-muted">%s</span>' % EMPTY_CHANGELIST_VALUE)
         for wrap in self.wraps:
@@ -120,14 +123,13 @@ def replace_field_to_value(layout, cb):
         if isinstance(lo, Field) or issubclass(lo.__class__, Field):
             layout.fields[i] = ShowField(
                 cb, *lo.fields, attrs=lo.attrs, wrapper_class=lo.wrapper_class)
-        elif isinstance(lo, basestring):
+        elif is_string(lo):
             layout.fields[i] = ShowField(cb, lo)
         elif hasattr(lo, 'get_field_names'):
             replace_field_to_value(lo, cb)
 
 
 class DetailAdminView(ModelAdminView):
-
     form = forms.ModelForm
     detail_layout = None
     detail_show_all = True
@@ -143,7 +145,7 @@ class DetailAdminView(ModelAdminView):
         if self.obj is None:
             raise Http404(
                 _('%(name)s object with primary key %(key)r does not exist.') %
-                {'name': force_unicode(self.opts.verbose_name), 'key': escape(object_id)})
+                {'name': to_force_unicode(self.opts.verbose_name), 'key': escape(object_id)})
         self.org_obj = self.obj
 
     @filter_hook
@@ -171,7 +173,7 @@ class DetailAdminView(ModelAdminView):
                 rendered_fields = [i[1] for i in layout.get_field_names()]
                 container = layout[0].fields
                 other_fieldset = Fieldset(_(u'Other Fields'), *[
-                                          f for f in self.form_obj.fields.keys() if f not in rendered_fields])
+                    f for f in self.form_obj.fields.keys() if f not in rendered_fields])
 
                 if len(other_fieldset.fields):
                     if len(container) and isinstance(container[0], Column):
@@ -214,8 +216,10 @@ class DetailAdminView(ModelAdminView):
         layout = self.get_form_layout()
         replace_field_to_value(layout, self.get_field_result)
         helper.add_layout(layout)
-        helper.filter(
-            basestring, max_level=20).wrap(ShowField, admin_view=self)
+        if sys.version < '3':
+            helper.filter(basestring, max_level=20).wrap(ShowField, admin_view=self)
+        else:
+            helper.filter(str, max_level=20).wrap(ShowField, admin_view=self)
         return helper
 
     @csrf_protect_m
@@ -232,7 +236,7 @@ class DetailAdminView(ModelAdminView):
     @filter_hook
     def get_context(self):
         new_context = {
-            'title': _('%s Detail') % force_unicode(self.opts.verbose_name),
+            'title': _('%s Detail') % to_force_unicode(self.opts.verbose_name),
             'form': self.form_obj,
 
             'object': self.obj,
@@ -250,7 +254,7 @@ class DetailAdminView(ModelAdminView):
     @filter_hook
     def get_breadcrumb(self):
         bcs = super(DetailAdminView, self).get_breadcrumb()
-        item = {'title': force_unicode(self.obj)}
+        item = {'title': to_force_unicode(self.obj)}
         if self.has_view_permission():
             item['url'] = self.model_admin_url('detail', self.obj.pk)
         bcs.append(item)
@@ -259,7 +263,7 @@ class DetailAdminView(ModelAdminView):
     @filter_hook
     def get_media(self):
         return super(DetailAdminView, self).get_media() + self.form_obj.media + \
-            self.vendor('xadmin.page.form.js', 'xadmin.form.css')
+               self.vendor('xadmin.page.form.js', 'xadmin.form.css')
 
     @filter_hook
     def get_field_result(self, field_name):
@@ -277,7 +281,6 @@ class DetailAdminView(ModelAdminView):
 
 
 class DetailAdminUtil(DetailAdminView):
-
     def init_request(self, obj):
         self.obj = obj
         self.org_obj = obj

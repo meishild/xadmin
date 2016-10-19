@@ -35,6 +35,9 @@ class IDC(models.Model):
 
     create_time = models.DateField(auto_now=True)
 
+    def __str__(self):
+        return self.name
+
     def __unicode__(self):
         return self.name
 
@@ -70,7 +73,7 @@ class Host(models.Model):
     service_type = models.CharField(max_length=32, choices=SERVICE_TYPES)
     description = models.TextField()
 
-    administrator = models.ForeignKey(AUTH_USER_MODEL, verbose_name="Admin")
+    administrator = models.ForeignKey(AUTH_USER_MODEL, verbose_name="Admin", null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -98,7 +101,6 @@ class MaintainLog(models.Model):
 
 
 class HostGroup(models.Model):
-
     name = models.CharField(max_length=32)
     description = models.TextField()
     hosts = models.ManyToManyField(

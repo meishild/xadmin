@@ -1,4 +1,3 @@
-
 vendors = {
     "bootstrap": {
         'js': {
@@ -11,10 +10,10 @@ vendors = {
             'production': 'xadmin/vendor/bootstrap/css/bootstrap.css',
             'cdn': 'http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css'
         },
-        'responsive': {'css':{
-                'dev': 'xadmin/vendor/bootstrap/bootstrap-responsive.css',
-                'production': 'xadmin/vendor/bootstrap/bootstrap-responsive.css'
-            }}
+        'responsive': {'css': {
+            'dev': 'xadmin/vendor/bootstrap/bootstrap-responsive.css',
+            'production': 'xadmin/vendor/bootstrap/bootstrap-responsive.css'
+        }}
     },
     'jquery': {
         "js": {
@@ -30,10 +29,14 @@ vendors = {
     },
     'jquery-ui-sortable': {
         "js": {
-            'dev': ['xadmin/vendor/jquery-ui/jquery.ui.core.js', 'xadmin/vendor/jquery-ui/jquery.ui.widget.js',
-                    'xadmin/vendor/jquery-ui/jquery.ui.mouse.js', 'xadmin/vendor/jquery-ui/jquery.ui.sortable.js'],
-            'production': ['xadmin/vendor/jquery-ui/jquery.ui.core.min.js', 'xadmin/vendor/jquery-ui/jquery.ui.widget.min.js',
-                           'xadmin/vendor/jquery-ui/jquery.ui.mouse.min.js', 'xadmin/vendor/jquery-ui/jquery.ui.sortable.min.js']
+            'dev': ['xadmin/vendor/jquery-ui/jquery.ui.core.js',
+                    'xadmin/vendor/jquery-ui/jquery.ui.widget.js',
+                    'xadmin/vendor/jquery-ui/jquery.ui.mouse.js',
+                    'xadmin/vendor/jquery-ui/jquery.ui.sortable.js'],
+            'production': ['xadmin/vendor/jquery-ui/jquery.ui.core.min.js',
+                           'xadmin/vendor/jquery-ui/jquery.ui.widget.min.js',
+                           'xadmin/vendor/jquery-ui/jquery.ui.mouse.min.js',
+                           'xadmin/vendor/jquery-ui/jquery.ui.sortable.min.js']
         }
     },
     "font-awesome": {
@@ -72,8 +75,12 @@ vendors = {
     },
     "flot": {
         "js": {
-            'dev': ['xadmin/vendor/flot/jquery.flot.js', 'xadmin/vendor/flot/jquery.flot.pie.js', 'xadmin/vendor/flot/jquery.flot.time.js',
-                    'xadmin/vendor/flot/jquery.flot.resize.js','xadmin/vendor/flot/jquery.flot.aggregate.js','xadmin/vendor/flot/jquery.flot.categories.js']
+            'dev': ['xadmin/vendor/flot/jquery.flot.js',
+                    'xadmin/vendor/flot/jquery.flot.pie.js',
+                    'xadmin/vendor/flot/jquery.flot.time.js',
+                    'xadmin/vendor/flot/jquery.flot.resize.js',
+                    'xadmin/vendor/flot/jquery.flot.aggregate.js',
+                    'xadmin/vendor/flot/jquery.flot.categories.js']
         }
     },
     "image-gallery": {
@@ -82,17 +89,25 @@ vendors = {
             'production': 'xadmin/vendor/bootstrap-image-gallery/css/bootstrap-image-gallery.css',
         },
         "js": {
-            'dev': ['xadmin/vendor/load-image/load-image.js', 'xadmin/vendor/bootstrap-image-gallery/js/bootstrap-image-gallery.js'],
-            'production': ['xadmin/vendor/load-image/load-image.min.js', 'xadmin/vendor/bootstrap-image-gallery/js/bootstrap-image-gallery.js']
+            'dev': ['xadmin/vendor/load-image/load-image.js',
+                    'xadmin/vendor/bootstrap-image-gallery/js/bootstrap-image-gallery.js'],
+            'production': ['xadmin/vendor/load-image/load-image.min.js',
+                           'xadmin/vendor/bootstrap-image-gallery/js/bootstrap-image-gallery.js']
         }
     },
     "select": {
         "css": {
-            'dev': ['xadmin/vendor/select2/select2.css', 'xadmin/vendor/selectize/selectize.css', 'xadmin/vendor/selectize/selectize.bootstrap3.css'],
+            'dev': ['xadmin/vendor/select2/select2.css',
+                    'xadmin/vendor/selectize/selectize.css',
+                    'xadmin/vendor/selectize/selectize.bootstrap3.css'],
         },
         "js": {
-            'dev': ['xadmin/vendor/selectize/selectize.js', 'xadmin/vendor/select2/select2.js', 'xadmin/vendor/select2/select2_locale_%(lang)s.js'],
-            'production': ['xadmin/vendor/selectize/selectize.min.js', 'xadmin/vendor/select2/select2.min.js', 'xadmin/vendor/select2/select2_locale_%(lang)s.js']
+            'dev': ['xadmin/vendor/selectize/selectize.js',
+                    'xadmin/vendor/select2/select2.js',
+                    'xadmin/vendor/select2/select2_locale_%(lang)s.js'],
+            'production': ['xadmin/vendor/selectize/selectize.min.js',
+                           'xadmin/vendor/select2/select2.min.js',
+                           'xadmin/vendor/select2/select2_locale_%(lang)s.js']
         }
     },
     "multiselect": {

@@ -1,17 +1,18 @@
 import operator
-from xadmin import widgets
-from xadmin.plugins.utils import get_context_dict
+import sys
 
-from xadmin.util import get_fields_from_path, lookup_needs_distinct
 from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured, ValidationError
 from django.db import models
 from django.db.models.fields import FieldDoesNotExist
 from django.db.models.sql.query import LOOKUP_SEP, QUERY_TERMS
 from django.template import loader
-from django.utils.encoding import smart_str
 from django.utils.translation import ugettext as _
 
-from xadmin.filters import manager as filter_manager, FILTER_PREFIX, SEARCH_VAR, DateFieldListFilter, RelatedFieldSearchFilter
+from xadmin import widgets
+from xadmin.plugins.utils import get_context_dict
+from xadmin.util import get_fields_from_path, lookup_needs_distinct, to_smart_str
+from xadmin.filters import manager as filter_manager, FILTER_PREFIX, SEARCH_VAR, DateFieldListFilter, \
+    RelatedFieldSearchFilter
 from xadmin.sites import site
 from xadmin.views import BaseAdminPlugin, ListAdminView
 from xadmin.util import is_related_field
@@ -72,9 +73,13 @@ class FilterPlugin(BaseAdminPlugin):
         return clean_lookup in self.list_filter
 
     def get_list_queryset(self, queryset):
-        lookup_params = dict([(smart_str(k)[len(FILTER_PREFIX):], v) for k, v in self.admin_view.params.items()
-                              if smart_str(k).startswith(FILTER_PREFIX) and v != ''])
-        for p_key, p_val in lookup_params.iteritems():
+        lookup_params = dict([(to_smart_str(k)[len(FILTER_PREFIX):], v) for k, v in self.admin_view.params.items()
+                              if to_smart_str(k).startswith(FILTER_PREFIX) and v != ''])
+        if sys.version < '3':
+            items = lookup_params.iteritems()
+        else:
+            items = lookup_params.items()
+        for p_key, p_val in items:
             if p_val == "False":
                 lookup_params[p_key] = False
         use_distinct = False
@@ -82,7 +87,8 @@ class FilterPlugin(BaseAdminPlugin):
         # for clean filters
         self.admin_view.has_query_param = bool(lookup_params)
         self.admin_view.clean_query_url = self.admin_view.get_query_string(remove=
-                                                                           [k for k in self.request.GET.keys() if k.startswith(FILTER_PREFIX)])
+                                                                           [k for k in self.request.GET.keys() if
+                                                                            k.startswith(FILTER_PREFIX)])
 
         # Normalize the types of keys
         if not self.free_query_filter:
@@ -118,9 +124,9 @@ class FilterPlugin(BaseAdminPlugin):
                         field, self.request, lookup_params,
                         self.model, self.admin_view, field_path=field_path)
 
-                    if len(field_parts)>1:
+                    if len(field_parts) > 1:
                         # Add related model name to title
-                        spec.title = "%s %s"%(field_parts[-2].name,spec.title)
+                        spec.title = "%s %s" % (field_parts[-2].name, spec.title)
 
                     # Check if we need to use distinct()
                     use_distinct = (use_distinct or
@@ -128,7 +134,7 @@ class FilterPlugin(BaseAdminPlugin):
                 if spec and spec.has_output():
                     try:
                         new_qs = spec.do_filte(queryset)
-                    except ValidationError, e:
+                    except ValidationError as e:
                         new_qs = None
                         self.admin_view.message_user(_("<b>Filtering error:</b> %s") % e.messages[0], 'error')
                     if new_qs is not None:
@@ -139,20 +145,20 @@ class FilterPlugin(BaseAdminPlugin):
         self.has_filters = bool(self.filter_specs)
         self.admin_view.filter_specs = self.filter_specs
         self.admin_view.used_filter_num = len(
-            filter(lambda f: f.is_used, self.filter_specs))
+            list(filter(lambda f: f.is_used, self.filter_specs)))
 
         try:
             for key, value in lookup_params.items():
                 use_distinct = (
                     use_distinct or lookup_needs_distinct(self.opts, key))
-        except FieldDoesNotExist, e:
+        except FieldDoesNotExist as e:
             raise IncorrectLookupParameters(e)
 
         try:
             queryset = queryset.filter(**lookup_params)
         except (SuspiciousOperation, ImproperlyConfigured):
             raise
-        except Exception, e:
+        except Exception as e:
             raise IncorrectLookupParameters(e)
 
         query = self.request.GET.get(SEARCH_VAR, '')
@@ -174,6 +180,9 @@ class FilterPlugin(BaseAdminPlugin):
             for bit in query.split():
                 or_queries = [models.Q(**{orm_lookup: bit})
                               for orm_lookup in orm_lookups]
+                if sys.version > '3':
+                    from functools import reduce
+
                 queryset = queryset.filter(reduce(operator.or_, or_queries))
             if not use_distinct:
                 for search_spec in orm_lookups:
@@ -216,5 +225,6 @@ class FilterPlugin(BaseAdminPlugin):
                     'xadmin/blocks/model_list.nav_form.search_form.html',
                     context=context)
             )
+
 
 site.register_plugin(FilterPlugin, ListAdminView)
