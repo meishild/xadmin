@@ -24,7 +24,7 @@ from xadmin.util import unquote, lookup_field, display_for_field, boolean_icon, 
 from .base import ModelAdminView, filter_hook, csrf_protect_m
 
 # Text to display within change-list table cells if the value is blank.
-EMPTY_CHANGELIST_VALUE = _('Null')
+EMPTY_CHANGELIST_VALUE = 'Null'
 
 
 class ShowField(Field):
@@ -110,9 +110,9 @@ class ResultField(object):
     def val(self):
         text = mark_safe(
             self.text) if self.allow_tags else conditional_escape(self.text)
-        if to_force_unicode(text) == '' or text == 'None' or text == EMPTY_CHANGELIST_VALUE:
+        if to_force_unicode(text) == '' or text == 'None' or text == _(EMPTY_CHANGELIST_VALUE):
             text = mark_safe(
-                '<span class="text-muted">%s</span>' % EMPTY_CHANGELIST_VALUE)
+                '<span class="text-muted">%s</span>' % _(EMPTY_CHANGELIST_VALUE))
         for wrap in self.wraps:
             text = mark_safe(wrap % text)
         return text
@@ -143,9 +143,8 @@ class DetailAdminView(ModelAdminView):
             raise PermissionDenied
 
         if self.obj is None:
-            raise Http404(
-                _('%(name)s object with primary key %(key)r does not exist.') %
-                {'name': to_force_unicode(self.opts.verbose_name), 'key': escape(object_id)})
+            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') %
+                          {'name': to_force_unicode(self.opts.verbose_name), 'key': escape(object_id)})
         self.org_obj = self.obj
 
     @filter_hook
@@ -153,11 +152,9 @@ class DetailAdminView(ModelAdminView):
         layout = copy.deepcopy(self.detail_layout or self.form_layout)
 
         if layout is None:
-            layout = Layout(Container(Col('full',
-                                          Fieldset(
-                                              "", *self.form_obj.fields.keys(),
-                                              css_class="unsort no_title"), horizontal=True, span=12)
-                                      ))
+            layout = Layout(Container(Col('full', Fieldset("", *self.form_obj.fields.keys(),
+                                                           css_class="unsort no_title"), horizontal=True, span=12)))
+
         elif type(layout) in (list, tuple) and len(layout) > 0:
             if isinstance(layout[0], Column):
                 fs = layout
@@ -238,12 +235,9 @@ class DetailAdminView(ModelAdminView):
         new_context = {
             'title': _('%s Detail') % to_force_unicode(self.opts.verbose_name),
             'form': self.form_obj,
-
             'object': self.obj,
-
             'has_change_permission': self.has_change_permission(self.obj),
             'has_delete_permission': self.has_delete_permission(self.obj),
-
             'content_type_id': ContentType.objects.get_for_model(self.model).id,
         }
 
@@ -262,8 +256,8 @@ class DetailAdminView(ModelAdminView):
 
     @filter_hook
     def get_media(self):
-        return super(DetailAdminView, self).get_media() + self.form_obj.media + \
-               self.vendor('xadmin.page.form.js', 'xadmin.form.css')
+        return super(DetailAdminView, self).get_media() + self.form_obj.media + self.vendor(
+            'xadmin.page.form.js', 'xadmin.form.css')
 
     @filter_hook
     def get_field_result(self, field_name):
@@ -274,9 +268,8 @@ class DetailAdminView(ModelAdminView):
         context = self.get_context()
         context.update(kwargs or {})
         self.request.current_app = self.admin_site.name
-        response = TemplateResponse(self.request, self.detail_template or
-                                    self.get_template_list('views/model_detail.html'),
-                                    context)
+        response = TemplateResponse(
+            self.request, self.detail_template or self.get_template_list('views/model_detail.html'), context)
         return response
 
 

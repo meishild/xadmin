@@ -332,7 +332,7 @@ def display_for_field(value, field):
     elif isinstance(field, models.FloatField):
         return formats.number_format(value)
     elif isinstance(field.rel, models.ManyToManyRel):
-        return ', '.join([smart_unicode(obj) for obj in value.all()])
+        return ', '.join([to_smart_unicode(obj) for obj in value.all()])
     else:
         return to_smart_unicode(value)
 
@@ -490,35 +490,35 @@ def to_force_unicode(data):
     if sys.version < '3':
         return force_unicode(data)
     else:
-        return data
+        return str(data)
 
 
 def to_force_text(data):
     if sys.version < '3':
         return force_text(data)
     else:
-        return data
+        return str(data)
 
 
 def to_smart_unicode(data):
     if sys.version < '3':
         return smart_unicode(data)
     else:
-        return data
+        return str(data)
 
 
 def to_smart_text(data):
     if sys.version < '3':
         return smart_text(data)
     else:
-        return data
+        return str(data)
 
 
 def to_smart_str(data):
     if sys.version < '3':
         return smart_str(data)
     else:
-        return data
+        return str(data)
 
 
 def is_string(data):

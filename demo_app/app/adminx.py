@@ -213,7 +213,6 @@ class AccessRecordAdmin(object):
     def _chart_month(self, obj):
         return obj.date.strftime("%B")
 
-
 sites.site.register(Host, HostAdmin)
 sites.site.register(HostGroup, HostGroupAdmin)
 sites.site.register(MaintainLog, MaintainLogAdmin)
