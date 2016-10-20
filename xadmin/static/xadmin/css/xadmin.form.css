@@ -24,6 +24,19 @@ select.selectmultiple {
   margin-right: -15px;
   margin-left: -15px;
 }
+.form-group .checkbox{
+    margin: 0 15px;
+    padding: 15px;
+}
+
+.widget_options .modal-content{
+  position: fixed;
+    width: 60%;
+    top: 30%;
+    left: 50%;
+    transform: translate3d(-50%, -30%, 0);
+}
+
 .control-label {
   padding: 7px 10px;
   font-weight: bold;
@@ -75,7 +88,7 @@ select.selectmultiple {
 
 @media (min-width: 768px) {
 
-  .text-field, 
+  .text-field,
   .textinput,
   .url-field,
   select,

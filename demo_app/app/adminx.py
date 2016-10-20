@@ -1,5 +1,4 @@
-import xadmin
-from xadmin import views
+from xadmin import views, sites, filters
 from .models import IDC, Host, MaintainLog, HostGroup, AccessRecord
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
 from xadmin.plugins.inline import Inline
@@ -7,10 +6,13 @@ from xadmin.plugins.batch import BatchChangeAction
 
 
 class MainDashboard(object):
+    # 只有禁止自定义才会使用通用方式
+    # widget_customiz = False
+
     widgets = [
         [
             {"type": "html", "title": "Test Widget",
-             "content": "<h3> Welcome to Xadmin! </h3><p>Join Online Group: <br/>QQ Qun : 282936295</p>"},
+             "content": "<h3> Welcome to Xadmin! </h3>"},
             {"type": "chart", "model": "app.accessrecord", 'chart': 'user_count',
              'params': {'_p_date__gte': '2013-01-08', 'p': 1, '_p_date__lt': '2013-01-29'}},
             {"type": "list", "model": "app.host", 'params': {
@@ -24,7 +26,7 @@ class MainDashboard(object):
     ]
 
 
-xadmin.sites.site.register(views.website.IndexView, MainDashboard)
+sites.site.register(views.website.IndexView, MainDashboard)
 
 
 class BaseSetting(object):
@@ -32,7 +34,7 @@ class BaseSetting(object):
     use_bootswatch = True
 
 
-xadmin.sites.site.register(views.BaseAdminView, BaseSetting)
+sites.site.register(views.BaseAdminView, BaseSetting)
 
 
 class GlobalSetting(object):
@@ -43,7 +45,7 @@ class GlobalSetting(object):
     menu_style = 'default'  # 'accordion'
 
 
-xadmin.sites.site.register(views.CommAdminView, GlobalSetting)
+sites.site.register(views.CommAdminView, GlobalSetting)
 
 
 class MaintainInline(object):
@@ -87,7 +89,7 @@ class HostAdmin(object):
     search_fields = ['name', 'ip', 'description']
     list_filter = ['idc', 'guarantee_date', 'status', 'brand', 'model',
                    'cpu', 'core_num', 'hard_disk', 'memory',
-                   ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
+                   ('service_type', filters.MultiSelectFieldListFilter)]
 
     list_quick_filter = ['service_type', {'field': 'idc__name', 'limit': 10}]
     list_bookmarks = [{'title': "Need Guarantee", 'query': {'status__exact': 2}, 'order': ('-guarantee_date',),
@@ -212,8 +214,8 @@ class AccessRecordAdmin(object):
         return obj.date.strftime("%B")
 
 
-xadmin.sites.site.register(Host, HostAdmin)
-xadmin.sites.site.register(HostGroup, HostGroupAdmin)
-xadmin.sites.site.register(MaintainLog, MaintainLogAdmin)
-xadmin.sites.site.register(IDC, IDCAdmin)
-xadmin.sites.site.register(AccessRecord, AccessRecordAdmin)
+sites.site.register(Host, HostAdmin)
+sites.site.register(HostGroup, HostGroupAdmin)
+sites.site.register(MaintainLog, MaintainLogAdmin)
+sites.site.register(IDC, IDCAdmin)
+sites.site.register(AccessRecord, AccessRecordAdmin)

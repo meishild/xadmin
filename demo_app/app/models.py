@@ -24,8 +24,8 @@ SERVICE_TYPES = (
 
 
 class IDC(models.Model):
-    name = models.CharField(max_length=64)
-    description = models.TextField()
+    name = models.CharField(max_length=64, verbose_name="名称")
+    description = models.TextField(verbose_name="描述")
 
     contact = models.CharField(max_length=32)
     telphone = models.CharField(max_length=32)
@@ -33,7 +33,7 @@ class IDC(models.Model):
     customer_id = models.CharField(max_length=128)
     groups = models.ManyToManyField(Group)  # many
 
-    create_time = models.DateField(auto_now=True)
+    create_time = models.DateField(auto_now=True, verbose_name="创建时间")
 
     def __str__(self):
         return self.name
@@ -74,6 +74,9 @@ class Host(models.Model):
     description = models.TextField()
 
     administrator = models.ForeignKey(AUTH_USER_MODEL, verbose_name="Admin", null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
     def __unicode__(self):
         return self.name

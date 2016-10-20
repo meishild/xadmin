@@ -1,3 +1,7 @@
+::-webkit-scrollbar {
+  background: transparent;
+  width: 0;
+}
 
 a { cursor: pointer;}
 
