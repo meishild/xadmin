@@ -158,3 +158,126 @@ class ChartsView(ListAdminView):
 
 site.register_plugin(ChartsPlugin, ListAdminView)
 site.register_modelview(r'^chart/(.+)/$', ChartsView, name='%s_%s_chart')
+
+
+class DictChartsPlugin(BaseAdminPlugin):
+    data_dict_charts = {}
+
+    def init_request(self, *args, **kwargs):
+        return bool(self.data_dict_charts)
+
+    def get_chart_url(self, name, v):
+        return self.admin_view.model_admin_url('dict_chart', name) + self.admin_view.get_query_string()
+
+    # Media
+    def get_media(self, media):
+        return media + self.vendor('flot.js', 'xadmin.plugin.charts.js')
+
+    # Block Views
+    def block_results_top(self, context, nodes):
+        context.update({
+            'charts': [
+                {
+                    "name": name, "title": v['title'],
+                    'url': self.get_chart_url(name, v)} for name, v in self.data_dict_charts.items()],
+        })
+        nodes.append(
+            loader.render_to_string('xadmin/blocks/model_list.results_top.charts.html', context_instance=context))
+
+
+class DictChartsView(ListAdminView):
+    data_dict_charts = {}
+
+    def get_ordering(self):
+        if 'order' in self.chart:
+            return self.chart['order']
+        else:
+            return super(DictChartsView, self).get_ordering()
+
+    def get(self, request, name):
+        if name not in self.data_dict_charts:
+            return HttpResponseNotFound()
+
+        self.chart = self.data_dict_charts[name]
+        self.x_field_name = self.chart.get('x-field-name')
+        self.y_field_name = self.chart.get('x-field-name')
+        self.x_ticks = self.chart.get('x-ticks')
+        self.y_ticks = self.chart.get('y-ticks')
+
+        datas = self.chart['datas']
+        option = {
+            'series': {'lines': {'show': True}, 'points': {'show': True}},
+            'grid': {'hoverable': True, 'clickable': True},
+        }
+
+        try:
+            xfield = datas[0].get('data')[0][0]
+            if type(xfield) in (datetime.datetime, datetime.date, datetime.time):
+                option['xaxis'] = {'mode': "time", 'tickLength': 5}
+                if type(xfield) is datetime.date:
+                    option['xaxis']['timeformat'] = "%y/%m/%d"
+                elif type(xfield) is datetime.time:
+                    option['xaxis']['timeformat'] = "%H:%M:%S"
+                else:
+                    if xfield.hour == 0 and xfield.minute == 0 and xfield.second == 0:
+                        option['xaxis']['timeformat'] = "%y/%m/%d"
+                    else:
+                        option['xaxis']['timeformat'] = "%y/%m/%d %H:%M:%S"
+        except Exception:
+            pass
+        content = {'data': datas, 'option': option}
+        result = json.dumps(content, cls=JSONEncoder, ensure_ascii=False)
+        return HttpResponse(result)
+
+
+@widget_manager.register
+class DictChartWidget(ModelBaseWidget):
+    widget_type = 'dict_chart'
+    description = 'Show models simple chart.'
+    template = 'xadmin/widgets/chart.html'
+    widget_icon = 'fa fa-bar-chart-o'
+
+    def convert(self, data):
+        self.list_params = data.pop('params', {})
+        self.chart = data.pop('dict_chart', None)
+
+    def setup(self):
+        super(DictChartWidget, self).setup()
+
+        self.charts = {}
+        self.one_chart = False
+        model_admin = self.admin_site._registry[self.model]
+        chart = self.chart
+
+        if hasattr(model_admin, 'data_dict_charts'):
+            if chart and chart in model_admin.data_charts:
+                self.charts = {chart: model_admin.data_dict_charts[chart]}
+                self.one_chart = True
+                if self.title is None:
+                    self.title = model_admin.data_dict_charts[chart].get('title')
+            else:
+                self.charts = model_admin.data_dict_charts
+                if self.title is None:
+                    self.title = ugettext(
+                        "%s Charts") % self.model._meta.verbose_name_plural
+
+    def filte_choices_model(self, model, modeladmin):
+        return bool(getattr(modeladmin, 'data_dict_charts', None)) and \
+               super(DictChartWidget, self).filte_choices_model(model, modeladmin)
+
+    def get_chart_url(self, name, v):
+        return self.model_admin_url('dict_chart', name) + "?" + urlencode(self.list_params)
+
+    def context(self, context):
+        context.update({
+            'charts': [{"name": name, "title": v['title'], 'url': self.get_chart_url(name, v)} for name, v in
+                       self.charts.items()],
+        })
+
+    # Media
+    def media(self):
+        return self.vendor('flot.js', 'xadmin.plugin.charts.js')
+
+
+site.register_plugin(DictChartsPlugin, ListAdminView)
+site.register_modelview(r'^dict_chart/(.+)/$', DictChartsView, name='%s_%s_dict_chart')

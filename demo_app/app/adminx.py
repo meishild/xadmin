@@ -7,16 +7,15 @@ from xadmin.plugins.batch import BatchChangeAction
 
 class MainDashboard(object):
     # 只有禁止自定义才会使用通用方式
-    # widget_customiz = False
+    widget_customiz = False
 
     widgets = [
         [
-            {"type": "html", "title": "Test Widget",
-             "content": "<h3> Welcome to Xadmin! </h3>"},
+            {"type": "html", "title": "Test Widget", "content": "<h3> Welcome to Xadmin! </h3>"},
             {"type": "chart", "model": "app.accessrecord", 'chart': 'user_count',
              'params': {'_p_date__gte': '2013-01-08', 'p': 1, '_p_date__lt': '2013-01-29'}},
-            {"type": "list", "model": "app.host", 'params': {
-                'o': '-guarantee_date'}},
+            {"type": "list", "model": "app.host", 'params': {'o': '-guarantee_date'}},
+            {"type": "dict_chart", "model": "app.idc", 'title': 'idc_day_count', 'chart': 'idc_count'},
         ],
         [
             {"type": "qbutton", "title": "Quick Start",
@@ -54,6 +53,16 @@ class MaintainInline(object):
     style = 'accordion'
 
 
+def summary_idc_day_add():
+    from django.db import connection
+    from django.db.models import Count
+
+    select = {'day': connection.ops.date_trunc_sql('day', 'create_time')}
+    summary_dict = IDC.objects.extra(select=select).values('day').order_by("create_time") \
+        .annotate(count=Count('id')).values_list("day", "count")
+    return list(summary_dict)
+
+
 class IDCAdmin(object):
     list_display = ('name', 'description', 'create_time')
     list_display_links = ('name',)
@@ -69,6 +78,18 @@ class IDCAdmin(object):
 
     actions = [BatchChangeAction, ]
     batch_fields = ('contact', 'groups')
+
+    data_dict_charts = {
+        "idc_count": {
+            'title': u"IDC DAY COUNT",
+            "x-field-name": "x",
+            "y-field-name": "y",
+            'datas': [{
+                'data': summary_idc_day_add(),
+                'label': "COUNT",
+            }]
+        },
+    }
 
 
 class HostAdmin(object):
@@ -87,8 +108,7 @@ class HostAdmin(object):
     style_fields = {'system': "radio-inline"}
 
     search_fields = ['name', 'ip', 'description']
-    list_filter = ['idc', 'guarantee_date', 'status', 'brand', 'model',
-                   'cpu', 'core_num', 'hard_disk', 'memory',
+    list_filter = ['idc', 'guarantee_date', 'status', 'brand', 'model', 'cpu', 'core_num', 'hard_disk', 'memory',
                    ('service_type', filters.MultiSelectFieldListFilter)]
 
     list_quick_filter = ['service_type', {'field': 'idc__name', 'limit': 10}]
@@ -135,13 +155,14 @@ class HostAdmin(object):
     reversion_enable = True
 
     data_charts = {
-        "host_service_type_counts": {'title': u"Host service type count", "x-field": "service_type",
-                                     "y-field": ("service_type",),
-                                     "option": {
-                                         "series": {"bars": {"align": "center", "barWidth": 0.8, 'show': True}},
-                                         "xaxis": {"aggregate": "count", "mode": "categories"},
-                                     },
-                                     },
+        "host_service_type_counts": {
+            'title': u"Host service type count", "x-field": "service_type",
+            "y-field": ("service_type",),
+            "option": {
+                "series": {"bars": {"align": "center", "barWidth": 0.8, 'show': True}},
+                "xaxis": {"aggregate": "count", "mode": "categories"},
+            },
+        },
     }
 
 
@@ -205,13 +226,13 @@ class AccessRecordAdmin(object):
         "per_month": {'title': u"Monthly Users", "x-field": "_chart_month", "y-field": ("user_count",),
                       "option": {
                           "series": {"bars": {"align": "center", "barWidth": 0.8, 'show': True}},
-                          "xaxis": {"aggregate": "sum", "mode": "categories"},
-                      },
+                          "xaxis": {"aggregate": "sum", "mode": "categories"}, },
                       },
     }
 
     def _chart_month(self, obj):
         return obj.date.strftime("%B")
+
 
 sites.site.register(Host, HostAdmin)
 sites.site.register(HostGroup, HostGroupAdmin)
