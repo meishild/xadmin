@@ -7,3 +7,4 @@ requests==2.11.1
 wheel==0.24.0
 XlsxWriter==0.9.3
 xlwt==1.1.2
+djangorestframework

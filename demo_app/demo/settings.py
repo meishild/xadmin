@@ -146,10 +146,16 @@ INSTALLED_APPS = (
     'crispy_forms',
     'reversion',
 
+    'rest_framework',
     'app',
 )
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'PAGE_SIZE': 10
+}
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

@@ -1,14 +1,17 @@
-from django.conf.urls import patterns, include, url
-
-# Uncomment the next two lines to enable the admin:
 import xadmin
-
+from demo_app.app import views
+from django.conf.urls import url, include
+from rest_framework import routers
 from xadmin.plugins import xversion
+
 xversion.register_models()
 
-from django.contrib import admin
+router = routers.DefaultRouter()
+router.register(r'users', views.UserViewSet)
+router.register(r'groups', views.GroupViewSet)
 
 urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^', include(xadmin.site.urls))
+    url(r'^admin/', include(xadmin.site.urls)),
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^', include(router.urls)),
 ]
