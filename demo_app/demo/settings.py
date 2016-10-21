@@ -146,6 +146,7 @@ INSTALLED_APPS = (
     'crispy_forms',
     'reversion',
 
+    'oauth2_provider',
     'rest_framework',
     'app',
 )
@@ -153,8 +154,20 @@ INSTALLED_APPS = (
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+    ),
+
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAdminUser',
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'PAGE_SIZE': 10
+}
+
+OAUTH2_PROVIDER = {
+    # this is the list of available scopes
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
 }
 
 # A sample logging configuration. The only tangible logging

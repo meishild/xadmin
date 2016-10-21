@@ -12,6 +12,6 @@ router.register(r'groups', views.GroupViewSet)
 
 urlpatterns = [
     url(r'^admin/', include(xadmin.site.urls)),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^', include(router.urls)),
 ]
